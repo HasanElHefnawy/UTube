@@ -33,7 +33,7 @@ public class MainActivity extends AppCompatActivity {
         binding.recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
         RetrofitApiService retrofitApiService = RetrofitApiClient.getClient().create(RetrofitApiService.class);
-        Call<Video> call = retrofitApiService.getAllVideos("Java Android");
+        Call<Video> call = retrofitApiService.getAllVideos(binding.searchEditText.getText().toString());
         call.enqueue(new Callback<Video>() {
             @Override
             public void onResponse(@NonNull Call<Video> call, @NonNull Response<Video> response) {
