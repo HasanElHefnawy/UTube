@@ -28,7 +28,7 @@ public class MainActivity extends AppCompatActivity {
 
         RecyclerView recyclerView = findViewById(R.id.recycler_view);
         final List<Video.Item> items = new ArrayList<>();
-        final VideoAdapter adapter = new VideoAdapter(items);
+        final VideoAdapter adapter = new VideoAdapter(items, this);
         recyclerView.setAdapter(adapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 

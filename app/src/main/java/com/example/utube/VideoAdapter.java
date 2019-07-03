@@ -6,6 +6,7 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.example.utube.model.Video;
@@ -14,9 +15,11 @@ import java.util.List;
 
 public class VideoAdapter extends RecyclerView.Adapter<VideoAdapter.ViewHolder> {
     private List<Video.Item> items;
+    private Context context;
 
-    VideoAdapter(List<Video.Item> items) {
+    VideoAdapter(List<Video.Item> items, Context context) {
         this.items = items;
+        this.context = context;
     }
 
     @NonNull
@@ -32,6 +35,9 @@ public class VideoAdapter extends RecyclerView.Adapter<VideoAdapter.ViewHolder> 
     public void onBindViewHolder(@NonNull ViewHolder viewHolder, int position) {
         Video.Item item = items.get(position);
         viewHolder.titleTextView.setText(item.getSnippet().getTitle());
+        GlideApp.with(context)
+                .load(item.getSnippet().getThumbnails().getDefault().getUrl())
+                .into(viewHolder.imageView);
     }
 
     @Override
@@ -41,10 +47,12 @@ public class VideoAdapter extends RecyclerView.Adapter<VideoAdapter.ViewHolder> 
 
     class ViewHolder extends RecyclerView.ViewHolder {
         TextView titleTextView;
+        ImageView imageView;
 
         ViewHolder(@NonNull View itemView) {
             super(itemView);
             titleTextView = itemView.findViewById(R.id.title);
+            imageView = itemView.findViewById(R.id.image);
         }
     }
 }
