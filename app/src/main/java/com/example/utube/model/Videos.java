@@ -4,7 +4,7 @@ import com.squareup.moshi.Json;
 
 import java.util.List;
 
-public class Video {
+public class Videos {
 
     @Json(name = "kind")
     private String kind;

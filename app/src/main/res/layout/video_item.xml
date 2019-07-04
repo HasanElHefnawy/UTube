@@ -5,8 +5,8 @@
     <data>
 
         <variable
-            name="video"
-            type="com.example.utube.model.Video" />
+            name="videos"
+            type="com.example.utube.model.Videos" />
     </data>
 
     <android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"

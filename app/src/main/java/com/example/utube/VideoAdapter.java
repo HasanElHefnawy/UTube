@@ -8,15 +8,15 @@ import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
 import com.example.utube.databinding.VideoItemBinding;
-import com.example.utube.model.Video;
+import com.example.utube.model.Videos;
 
 import java.util.List;
 
 public class VideoAdapter extends RecyclerView.Adapter<VideoAdapter.ViewHolder> {
-    private List<Video.Item> items;
+    private List<Videos.Item> items;
     private Context context;
 
-    VideoAdapter(List<Video.Item> items, Context context) {
+    VideoAdapter(List<Videos.Item> items, Context context) {
         this.items = items;
         this.context = context;
     }
@@ -32,7 +32,7 @@ public class VideoAdapter extends RecyclerView.Adapter<VideoAdapter.ViewHolder> 
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder viewHolder, int position) {
-        Video.Item item = items.get(position);
+        Videos.Item item = items.get(position);
         viewHolder.binding.title.setText(item.getSnippet().getTitle());
         GlideApp.with(context)
                 .load(item.getSnippet().getThumbnails().getDefault().getUrl())

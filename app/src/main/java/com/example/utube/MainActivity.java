@@ -8,7 +8,7 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.example.utube.databinding.ActivityMainBinding;
-import com.example.utube.model.Video;
+import com.example.utube.model.Videos;
 import com.example.utube.network.RetrofitApiClient;
 import com.example.utube.network.RetrofitApiService;
 import com.jakewharton.rxbinding2.widget.RxTextView;
@@ -27,7 +27,7 @@ import io.reactivex.schedulers.Schedulers;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "zzzzz MainActivity";
-    private List<Video.Item> items;
+    private List<Videos.Item> items;
     private VideoAdapter adapter;
     private RetrofitApiService retrofitApiService;
     private CompositeDisposable disposable = new CompositeDisposable();
@@ -47,17 +47,17 @@ public class MainActivity extends AppCompatActivity {
         disposable.add(RxTextView.textChangeEvents(binding.searchEditText)
                 .skipInitialValue()
                 .debounce(300, TimeUnit.MILLISECONDS)
-                .switchMap(new Function<TextViewTextChangeEvent, Observable<Video>>() {
+                .switchMap(new Function<TextViewTextChangeEvent, Observable<Videos>>() {
                     @Override
-                    public Observable<Video> apply(TextViewTextChangeEvent textViewTextChangeEvent) {
+                    public Observable<Videos> apply(TextViewTextChangeEvent textViewTextChangeEvent) {
                         return retrofitApiService.getAllVideos(textViewTextChangeEvent.text().toString())
                                 .subscribeOn(Schedulers.io())
                                 .observeOn(AndroidSchedulers.mainThread());
                     }
                 })
-                .subscribeWith(new DisposableObserver<Video>() {
+                .subscribeWith(new DisposableObserver<Videos>() {
                     @Override
-                    public void onNext(Video video) {
+                    public void onNext(Videos video) {
                         Log.e(TAG, "onNext: video " + video);
                         Log.e(TAG, "onNext: video.getItems().size() " + video.getItems().size());
                         items.clear();
