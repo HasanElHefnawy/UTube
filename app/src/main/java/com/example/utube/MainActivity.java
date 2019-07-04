@@ -50,7 +50,13 @@ public class MainActivity extends AppCompatActivity {
                 .switchMap(new Function<TextViewTextChangeEvent, Observable<Videos>>() {
                     @Override
                     public Observable<Videos> apply(TextViewTextChangeEvent textViewTextChangeEvent) {
-                        return retrofitApiService.getAllVideos(textViewTextChangeEvent.text().toString())
+                        return retrofitApiService.getAllVideos(
+                                "search",
+                                textViewTextChangeEvent.text().toString(),
+                                "snippet",
+                                "video",
+                                "5",
+                                "any")
                                 .subscribeOn(Schedulers.io())
                                 .observeOn(AndroidSchedulers.mainThread());
                     }

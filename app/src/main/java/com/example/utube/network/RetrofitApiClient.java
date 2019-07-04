@@ -51,12 +51,8 @@ public class RetrofitApiClient {
                 Request original = chain.request();
                 HttpUrl originalHttpUrl = original.url();
                 HttpUrl url = originalHttpUrl.newBuilder()
-                        .addPathSegment("search")
-                        .addQueryParameter("part", "snippet")
-                        .addQueryParameter("key", "AIzaSyAc8VIB-o1G1px3D27PvpnAF-6je3flzOU")
-                        .addQueryParameter("type", "video")
-                        .addQueryParameter("maxResults", "5")
-                        .addQueryParameter("videoDuration", "any")
+//                        .addQueryParameter("key", "AIzaSyAc8VIB-o1G1px3D27PvpnAF-6je3flzOU")
+                        .addQueryParameter("key", "AIzaSyB8Gp7tSeFeIfgRffnBA6BR2UOF9IZj_dg")
                         .build();
                 Request.Builder requestBuilder = original.newBuilder()
                         .url(url);
