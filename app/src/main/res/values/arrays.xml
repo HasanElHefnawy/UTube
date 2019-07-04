@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="duration">
+        <item>%1$d:%2$02d</item>
+        <item>%1$d:%2$02d:%3$02d</item>
+    </string-array>
+</resources>

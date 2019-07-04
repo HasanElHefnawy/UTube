@@ -15,6 +15,8 @@ import com.example.utube.model.Videos;
 import com.example.utube.network.RetrofitApiClient;
 import com.example.utube.network.RetrofitApiService;
 
+import org.joda.time.Period;
+
 import java.util.List;
 
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -63,7 +65,8 @@ public class VideoAdapter extends RecyclerView.Adapter<VideoAdapter.ViewHolder> 
                         Log.e(TAG, "onNext: video " + video);
                         Log.e(TAG, "onNext: video.getItems().size() " + video.getItems().size());
                         Log.e(TAG, "duration " + video.getItems().get(0).getContentDetails().getDuration());
-                        viewHolder.binding.duration.setText(video.getItems().get(0).getContentDetails().getDuration());
+                        Log.e(TAG, "parseDuration " + parseDuration(video.getItems().get(0).getContentDetails().getDuration()));
+                        viewHolder.binding.duration.setText(parseDuration(video.getItems().get(0).getContentDetails().getDuration()));
                     }
 
                     @Override
@@ -92,5 +95,16 @@ public class VideoAdapter extends RecyclerView.Adapter<VideoAdapter.ViewHolder> 
             super(itemBinding.getRoot());
             this.binding = itemBinding;
         }
+    }
+
+    private String parseDuration(String duration) {
+        Period period = Period.parse(duration);
+        int hours = period.getHours();
+        int mins = period.getMinutes();
+        int secs = period.getSeconds();
+        if (hours == 0)
+            return String.format(context.getResources().getStringArray(R.array.duration)[0], mins, secs);
+        else
+            return String.format(context.getResources().getStringArray(R.array.duration)[1], hours, mins, secs);
     }
 }
