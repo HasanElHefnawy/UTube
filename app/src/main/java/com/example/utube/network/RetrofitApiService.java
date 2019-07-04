@@ -1,5 +1,6 @@
 package com.example.utube.network;
 
+import com.example.utube.model.Video;
 import com.example.utube.model.Videos;
 
 import io.reactivex.Observable;
@@ -17,4 +18,10 @@ public interface RetrofitApiService {
             @Query("type") String type,
             @Query("maxResults") String maxResults,
             @Query("videoDuration") String videoDuration);
+
+    @GET("youtube/v3/{path}")
+    Observable<Video> getVideoDuration(
+            @Path("path") String path,
+            @Query("id") String query,
+            @Query("part") String part);
 }
