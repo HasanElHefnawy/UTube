@@ -1,10 +1,16 @@
 package com.example.utube;
 
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.databinding.DataBindingUtil;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.widget.Toast;
 
 import com.example.utube.databinding.ActivityMainBinding;
@@ -36,6 +42,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         ActivityMainBinding binding = DataBindingUtil.setContentView(this, R.layout.activity_main);
+        final SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
         items = new ArrayList<>();
         adapter = new VideoAdapter(items, this);
@@ -55,8 +62,8 @@ public class MainActivity extends AppCompatActivity {
                                 textViewTextChangeEvent.text().toString(),
                                 "snippet",
                                 "video",
-                                "5",
-                                "any")
+                                sharedPreferences.getString(getString(R.string.setting_max_results_key), "5"),
+                                sharedPreferences.getString(getString(R.string.setting_video_duration_key), "any"))
                                 .subscribeOn(Schedulers.io())
                                 .observeOn(AndroidSchedulers.mainThread());
                     }
@@ -82,5 +89,22 @@ public class MainActivity extends AppCompatActivity {
                         Log.e(TAG, "onComplete: ");
                     }
                 }));
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.settings_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.settings) {
+            Intent settingsIntent = new Intent(this, SettingsActivity.class);
+            startActivity(settingsIntent);
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 }

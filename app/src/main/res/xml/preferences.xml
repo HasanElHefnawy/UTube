@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <EditTextPreference
+        android:defaultValue="@string/setting_max_results_default_value"
+        android:inputType="numberDecimal"
+        android:key="@string/setting_max_results_key"
+        android:selectAllOnFocus="true"
+        android:title="@string/setting_max_results_title" />
+
+    <ListPreference
+        android:defaultValue="@string/setting_video_duration_default_value"
+        android:entries="@array/setting_video_duration_entries"
+        android:entryValues="@array/setting_video_duration_values"
+        android:key="@string/setting_video_duration_key"
+        android:title="@string/setting_video_duration_title" />
+
+</PreferenceScreen>
