@@ -102,6 +102,15 @@ public class Videos {
         private Id id;
         @Json(name = "snippet")
         private Snippet snippet;
+        private String duration;
+
+        public String getDuration() {
+            return duration;
+        }
+
+        public void setDuration(String duration) {
+            this.duration = duration;
+        }
 
         public String getKind() {
             return kind;

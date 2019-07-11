@@ -90,6 +90,12 @@ public class MainActivity extends AppCompatActivity {
                         return Observable.fromIterable(items);
                     }
                 })
+                .flatMap(new Function<Videos.Item, ObservableSource<Videos.Item>>() {
+                    @Override
+                    public ObservableSource<Videos.Item> apply(final Videos.Item item) {
+                        return getObservableVideoDuration(item);
+                    }
+                })
                 .subscribeWith(getDisposableObserverVideos())
         );
     }
@@ -107,16 +113,40 @@ public class MainActivity extends AppCompatActivity {
                 .observeOn(AndroidSchedulers.mainThread());
     }
 
+    private ObservableSource<Videos.Item> getObservableVideoDuration(final Videos.Item item) {
+        return retrofitApiService.getVideoDuration(
+                "videos",
+                item.getId().getVideoId(),
+                "contentDetails"
+        )
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .map(new Function<Video, Videos.Item>() {
+                    @Override
+                    public Videos.Item apply(Video video) {
+                        String duration = video.getItems().get(0).getContentDetails().getDuration();
+                        item.setDuration(parseDuration(duration));
+                        return item;
+                    }
+                });
+    }
+
     private DisposableObserver<Videos.Item> getDisposableObserverVideos() {
         return new DisposableObserver<Videos.Item>() {
             @Override
-            public void onNext(Videos.Item item) {
+            public void onNext(final Videos.Item item) {
                 Log.e(TAG, "onNext: getDisposableObserverVideos");
                 final String videoId = item.getId().getVideoId();
                 final String title = item.getSnippet().getTitle();
                 final String thumbnailsUrl = item.getSnippet().getThumbnails().getDefault().getUrl();
                 final DateTime publishedAt = DateTime.parse(item.getSnippet().getPublishedAt());
-                getObservableVideoDuration(item, videoId, title, thumbnailsUrl, publishedAt);
+                dataBaseExecutor.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        mDb.videoDao().insertVideo(new VideoEntry(videoId, title, thumbnailsUrl, publishedAt, item.getDuration()));
+                    }
+                });
+                loadVideosFromDatabase();
             }
 
             @Override
@@ -130,41 +160,6 @@ public class MainActivity extends AppCompatActivity {
                 Log.e(TAG, "onComplete: getDisposableObserverVideos");
             }
         };
-    }
-
-    private void getObservableVideoDuration(Videos.Item item, final String videoId, final String title, final String thumbnailsUrl, final DateTime publishedAt) {
-        final String[] duration = new String[1];
-        retrofitApiService.getVideoDuration(
-                "videos",
-                item.getId().getVideoId(),
-                "contentDetails")
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new DisposableObserver<Video>() {
-                    @Override
-                    public void onNext(Video video) {
-                        Log.e(TAG, "onNext: getObservableVideoDuration");
-                        duration[0] = parseDuration(video.getItems().get(0).getContentDetails().getDuration());
-                    }
-
-                    @Override
-                    public void onError(Throwable throwable) {
-                        Log.e(TAG, "onError: getObservableVideoDuration " + throwable);
-                        Toast.makeText(MainActivity.this, "Error!!!", Toast.LENGTH_SHORT).show();
-                    }
-
-                    @Override
-                    public void onComplete() {
-                        Log.e(TAG, "onComplete: getObservableVideoDuration");
-                        dataBaseExecutor.execute(new Runnable() {
-                            @Override
-                            public void run() {
-                                mDb.videoDao().insertVideo(new VideoEntry(videoId, title, thumbnailsUrl, publishedAt, duration[0]));
-                            }
-                        });
-                        loadVideosFromDatabase();
-                    }
-                });
     }
 
     private void loadVideosFromDatabase() {
