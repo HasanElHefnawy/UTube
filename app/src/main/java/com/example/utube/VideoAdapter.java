@@ -4,37 +4,24 @@ import android.content.Context;
 import android.databinding.DataBindingUtil;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
-import android.widget.Toast;
 
+import com.example.utube.database.VideoEntry;
 import com.example.utube.databinding.VideoItemBinding;
-import com.example.utube.model.Video;
-import com.example.utube.model.Videos;
-import com.example.utube.network.RetrofitApiClient;
-import com.example.utube.network.RetrofitApiService;
 
-import org.joda.time.Period;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 
 import java.util.List;
 
-import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.disposables.CompositeDisposable;
-import io.reactivex.observers.DisposableObserver;
-import io.reactivex.schedulers.Schedulers;
-
 public class VideoAdapter extends RecyclerView.Adapter<VideoAdapter.ViewHolder> {
-    private static final String TAG = "zzzzz VideoAdapter";
-    private List<Videos.Item> items;
+    private List<VideoEntry> videoEntries;
     private Context context;
-    private RetrofitApiService retrofitApiService;
-    private CompositeDisposable disposable = new CompositeDisposable();
 
-    VideoAdapter(List<Videos.Item> items, Context context) {
-        this.items = items;
+    VideoAdapter(List<VideoEntry> videoEntries, Context context) {
+        this.videoEntries = videoEntries;
         this.context = context;
-        retrofitApiService = RetrofitApiClient.getClient().create(RetrofitApiService.class);
     }
 
     @NonNull
@@ -48,44 +35,23 @@ public class VideoAdapter extends RecyclerView.Adapter<VideoAdapter.ViewHolder> 
 
     @Override
     public void onBindViewHolder(@NonNull final ViewHolder viewHolder, int position) {
-        final Videos.Item item = items.get(position);
-        viewHolder.binding.title.setText(item.getSnippet().getTitle());
+        VideoEntry videoEntry = videoEntries.get(position);
+        viewHolder.binding.title.setText(videoEntry.getTitle());
         GlideApp.with(context)
-                .load(item.getSnippet().getThumbnails().getDefault().getUrl())
+                .load(videoEntry.getThumbnailsUrl())
                 .into(viewHolder.binding.image);
-        disposable.add(retrofitApiService.getVideoDuration(
-                "videos",
-                item.getId().getVideoId(),
-                "contentDetails")
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribeWith(new DisposableObserver<Video>() {
-                    @Override
-                    public void onNext(Video video) {
-                        Log.e(TAG, "onNext: video " + video);
-                        Log.e(TAG, "onNext: video.getItems().size() " + video.getItems().size());
-                        Log.e(TAG, "duration " + video.getItems().get(0).getContentDetails().getDuration());
-                        Log.e(TAG, "parseDuration " + parseDuration(video.getItems().get(0).getContentDetails().getDuration()));
-                        viewHolder.binding.duration.setText(parseDuration(video.getItems().get(0).getContentDetails().getDuration()));
-                    }
-
-                    @Override
-                    public void onError(Throwable throwable) {
-                        Log.e(TAG, "onError: " + throwable);
-                        Toast.makeText(context, "Error!!!", Toast.LENGTH_SHORT).show();
-                    }
-
-                    @Override
-                    public void onComplete() {
-                        Log.e(TAG, "onComplete: ");
-                    }
-                })
-        );
+        DateTimeFormatter dateTimeFormatter = DateTimeFormat.forPattern("MMM, d yyyy");
+        String publishDate = dateTimeFormatter.print(videoEntry.getPublishedAt());
+        viewHolder.binding.publishedAt.setText(publishDate);
+        viewHolder.binding.duration.setText(videoEntry.getDuration().equals("0:00") ? "Live" : videoEntry.getDuration());
     }
 
     @Override
     public int getItemCount() {
-        return items.size();
+        if (videoEntries == null) {
+            return 0;
+        }
+        return videoEntries.size();
     }
 
     class ViewHolder extends RecyclerView.ViewHolder {
@@ -95,16 +61,5 @@ public class VideoAdapter extends RecyclerView.Adapter<VideoAdapter.ViewHolder> 
             super(itemBinding.getRoot());
             this.binding = itemBinding;
         }
-    }
-
-    private String parseDuration(String duration) {
-        Period period = Period.parse(duration);
-        int hours = period.getHours();
-        int mins = period.getMinutes();
-        int secs = period.getSeconds();
-        if (hours == 0)
-            return String.format(context.getResources().getStringArray(R.array.duration)[0], mins, secs);
-        else
-            return String.format(context.getResources().getStringArray(R.array.duration)[1], hours, mins, secs);
     }
 }
