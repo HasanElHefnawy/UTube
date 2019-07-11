@@ -1,7 +1,7 @@
 package com.example.utube;
 
-import android.arch.lifecycle.LiveData;
 import android.arch.lifecycle.Observer;
+import android.arch.lifecycle.ViewModelProviders;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.databinding.DataBindingUtil;
@@ -14,6 +14,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.Toast;
 
 import com.example.utube.database.AppDatabase;
@@ -23,6 +24,9 @@ import com.example.utube.model.Video;
 import com.example.utube.model.Videos;
 import com.example.utube.network.RetrofitApiClient;
 import com.example.utube.network.RetrofitApiService;
+import com.example.utube.viewmodel.MainViewModelDatabase;
+import com.example.utube.viewmodel.MainViewModelNetwork;
+import com.example.utube.viewmodel.MainViewModelNetworkFactory;
 import com.jakewharton.rxbinding2.widget.RxTextView;
 import com.jakewharton.rxbinding2.widget.TextViewTextChangeEvent;
 
@@ -50,6 +54,8 @@ public class MainActivity extends AppCompatActivity {
     private SharedPreferences sharedPreferences;
     private Executor dataBaseExecutor;
     private AppDatabase mDb;
+    private MainViewModelDatabase mainViewModelDatabase;
+    private MainViewModelNetwork mainViewModelNetwork;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,12 +64,26 @@ public class MainActivity extends AppCompatActivity {
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         dataBaseExecutor = AppExecutor.getInstance().dataBaseExecutor();
         mDb = AppDatabase.getInstance(this);
+        retrofitApiService = RetrofitApiClient.getClient().create(RetrofitApiService.class);
+        mainViewModelDatabase = ViewModelProviders.of(this).get(MainViewModelDatabase.class);
+        MainViewModelNetworkFactory mainViewModelNetworkFactory = new MainViewModelNetworkFactory(binding.searchEditText);
+        mainViewModelNetwork = ViewModelProviders.of(this, mainViewModelNetworkFactory).get(MainViewModelNetwork.class);
 
         loadVideosFromDatabase();
+        loadVideosOverInternetWhenTextChange();
 
-        retrofitApiService = RetrofitApiClient.getClient().create(RetrofitApiService.class);
+        binding.searchEditText.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mainViewModelNetwork.setTextViewTextChangeEvent(RxTextView.textChangeEvents(binding.searchEditText));
+                loadVideosOverInternetWhenTextChange();
+            }
+        });
+    }
 
-        disposable.add(RxTextView.textChangeEvents(binding.searchEditText)
+    public void loadVideosOverInternetWhenTextChange() {
+        disposable.clear();
+        disposable.add(mainViewModelNetwork.getTextViewTextChangeEvent(binding.searchEditText)
                 .skipInitialValue()
                 .debounce(300, TimeUnit.MILLISECONDS)
                 .switchMap(new Function<TextViewTextChangeEvent, Observable<Videos>>() {
@@ -164,11 +184,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void loadVideosFromDatabase() {
-        LiveData<List<VideoEntry>> videoEntries = mDb.videoDao().getAllVideos();
-        videoEntries.observe(this, new Observer<List<VideoEntry>>() {
+        mainViewModelDatabase.getVideoEntries().observe(this, new Observer<List<VideoEntry>>() {
             @Override
             public void onChanged(@Nullable List<VideoEntry> videoEntries) {
-                Log.e(TAG, "Receiving database update from LiveData");
+                Log.e(TAG, "Updating list of video entries from LiveData in ViewModel");
                 adapter = new VideoAdapter(videoEntries, MainActivity.this);
                 binding.recyclerView.setAdapter(adapter);
                 binding.recyclerView.setLayoutManager(new LinearLayoutManager(MainActivity.this));
