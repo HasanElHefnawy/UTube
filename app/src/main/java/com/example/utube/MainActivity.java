@@ -1,9 +1,12 @@
 package com.example.utube;
 
+import android.arch.lifecycle.LiveData;
+import android.arch.lifecycle.Observer;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.databinding.DataBindingUtil;
 import android.preference.PreferenceManager;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
@@ -40,7 +43,6 @@ import io.reactivex.schedulers.Schedulers;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "zzzzz MainActivity";
-    private List<VideoEntry> videoEntries;
     private VideoAdapter adapter;
     private RetrofitApiService retrofitApiService;
     private CompositeDisposable disposable = new CompositeDisposable();
@@ -146,7 +148,6 @@ public class MainActivity extends AppCompatActivity {
                         mDb.videoDao().insertVideo(new VideoEntry(videoId, title, thumbnailsUrl, publishedAt, item.getDuration()));
                     }
                 });
-                loadVideosFromDatabase();
             }
 
             @Override
@@ -163,18 +164,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void loadVideosFromDatabase() {
-        dataBaseExecutor.execute(new Runnable() {
+        LiveData<List<VideoEntry>> videoEntries = mDb.videoDao().getAllVideos();
+        videoEntries.observe(this, new Observer<List<VideoEntry>>() {
             @Override
-            public void run() {
-                videoEntries = mDb.videoDao().getAllVideos();
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        adapter = new VideoAdapter(videoEntries, MainActivity.this);
-                        binding.recyclerView.setAdapter(adapter);
-                        binding.recyclerView.setLayoutManager(new LinearLayoutManager(MainActivity.this));
-                    }
-                });
+            public void onChanged(@Nullable List<VideoEntry> videoEntries) {
+                Log.e(TAG, "Receiving database update from LiveData");
+                adapter = new VideoAdapter(videoEntries, MainActivity.this);
+                binding.recyclerView.setAdapter(adapter);
+                binding.recyclerView.setLayoutManager(new LinearLayoutManager(MainActivity.this));
             }
         });
     }
