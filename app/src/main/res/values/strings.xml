@@ -16,4 +16,7 @@
     <string name="setting_video_duration_value_long">long</string>
     <string name="setting_video_duration_value_medium">medium</string>
     <string name="setting_video_duration_value_short">short</string>
+    <string name="dialog_button_update">Update</string>
+    <string name="dialog_button_delete">Delete</string>
+    <string name="dialog_button_cancel">Cancel</string>
 </resources>

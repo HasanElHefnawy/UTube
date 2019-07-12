@@ -44,6 +44,7 @@ public class VideoAdapter extends RecyclerView.Adapter<VideoAdapter.ViewHolder> 
         String publishDate = dateTimeFormatter.print(videoEntry.getPublishedAt());
         viewHolder.binding.publishedAt.setText(publishDate);
         viewHolder.binding.duration.setText(videoEntry.getDuration().equals("0:00") ? "Live" : videoEntry.getDuration());
+        viewHolder.itemView.setTag(videoEntry.getId());
     }
 
     @Override

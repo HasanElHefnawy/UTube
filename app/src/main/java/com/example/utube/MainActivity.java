@@ -2,14 +2,17 @@ package com.example.utube;
 
 import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProviders;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.databinding.DataBindingUtil;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -71,6 +74,38 @@ public class MainActivity extends AppCompatActivity {
 
         loadVideosFromDatabase();
         loadVideosOverInternetWhenTextChange();
+
+        ItemClickSupport.addTo(binding.recyclerView).setOnItemLongClickListener(
+                new ItemClickSupport.OnItemLongClickListener() {
+                    @Override
+                    public boolean onItemLongClicked(RecyclerView recyclerView, int position, View v) {
+                        Toast.makeText(MainActivity.this, "onLongClick " + v.getTag(), Toast.LENGTH_SHORT).show();
+                        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                        View.inflate(MainActivity.this, R.layout.dialog, null);
+                        CharSequence[] dialogButtons = new CharSequence[]{
+                                getString(R.string.dialog_button_update),
+                                getString(R.string.dialog_button_delete),
+                                getString(R.string.dialog_button_cancel)};
+                        builder.setItems(dialogButtons,
+                                new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        switch (which) {
+                                            case 0:
+                                                Toast.makeText(MainActivity.this, "clicked 1", Toast.LENGTH_SHORT).show();
+                                                break;
+                                            case 1:
+                                                Toast.makeText(MainActivity.this, "clicked 2", Toast.LENGTH_SHORT).show();
+                                                break;
+                                            case 2:
+                                                Toast.makeText(MainActivity.this, "clicked 3", Toast.LENGTH_SHORT).show();
+                                                break;
+                                        }
+                                    }
+                                });
+                        builder.create().show();
+                        return true;
+                    }
+                });
 
         binding.searchEditText.setOnClickListener(new View.OnClickListener() {
             @Override
