@@ -78,7 +78,7 @@ public class MainActivity extends AppCompatActivity {
         ItemClickSupport.addTo(binding.recyclerView).setOnItemLongClickListener(
                 new ItemClickSupport.OnItemLongClickListener() {
                     @Override
-                    public boolean onItemLongClicked(RecyclerView recyclerView, int position, View v) {
+                    public boolean onItemLongClicked(RecyclerView recyclerView, int position, final View v) {
                         Toast.makeText(MainActivity.this, "onLongClick " + v.getTag(), Toast.LENGTH_SHORT).show();
                         AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
                         View.inflate(MainActivity.this, R.layout.dialog, null);
@@ -91,7 +91,9 @@ public class MainActivity extends AppCompatActivity {
                                     public void onClick(DialogInterface dialog, int which) {
                                         switch (which) {
                                             case 0:
-                                                Toast.makeText(MainActivity.this, "clicked 1", Toast.LENGTH_SHORT).show();
+                                                Intent editorIntent = new Intent(MainActivity.this, EditorActivity.class);
+                                                editorIntent.putExtra("id", (int) v.getTag());
+                                                startActivity(editorIntent);
                                                 break;
                                             case 1:
                                                 Toast.makeText(MainActivity.this, "clicked 2", Toast.LENGTH_SHORT).show();
