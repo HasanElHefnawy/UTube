@@ -6,7 +6,7 @@
     <android.support.constraint.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context=".EditorActivity">
+        tools:context=".activity.EditorActivity">
 
         <android.support.constraint.Guideline
             android:id="@+id/guideline"

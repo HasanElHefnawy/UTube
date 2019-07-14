@@ -1,4 +1,4 @@
-package com.example.utube;
+package com.example.utube.activity;
 
 import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProviders;
@@ -20,6 +20,10 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
 
+import com.example.utube.AppExecutor;
+import com.example.utube.ItemClickSupport;
+import com.example.utube.R;
+import com.example.utube.VideoAdapter;
 import com.example.utube.database.AppDatabase;
 import com.example.utube.database.VideoEntry;
 import com.example.utube.databinding.ActivityMainBinding;

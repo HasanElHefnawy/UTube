@@ -19,7 +19,7 @@ public class VideoAdapter extends RecyclerView.Adapter<VideoAdapter.ViewHolder> 
     private List<VideoEntry> videoEntries;
     private Context context;
 
-    VideoAdapter(List<VideoEntry> videoEntries, Context context) {
+    public VideoAdapter(List<VideoEntry> videoEntries, Context context) {
         this.videoEntries = videoEntries;
         this.context = context;
     }

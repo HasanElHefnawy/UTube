@@ -3,7 +3,7 @@ package com.example.utube;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
-class AppExecutor {
+public class AppExecutor {
 
     private static final Object LOCK = new Object();
     private static AppExecutor sInstance;
@@ -13,7 +13,7 @@ class AppExecutor {
         this.dataBaseExecutor = dataBaseExecutor;
     }
 
-    static AppExecutor getInstance() {
+    public static AppExecutor getInstance() {
         if (sInstance == null) {
             synchronized (LOCK) {
                 sInstance = new AppExecutor(Executors.newSingleThreadExecutor());
@@ -22,7 +22,7 @@ class AppExecutor {
         return sInstance;
     }
 
-    Executor dataBaseExecutor() {
+    public Executor dataBaseExecutor() {
         return dataBaseExecutor;
     }
 
