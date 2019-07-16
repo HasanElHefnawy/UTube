@@ -55,6 +55,7 @@ public class EditorActivity extends AppCompatActivity {
     private DateTime publishedAt;
     private String duration;
     private boolean videoHasChanged = false;
+    private EditorViewModelDatabase editorViewModelDatabase;
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
@@ -66,7 +67,7 @@ public class EditorActivity extends AppCompatActivity {
         Intent intent = getIntent();
         id = intent.getIntExtra("id", -1);
         EditorViewModelDatabaseFactory editorViewModelDatabaseFactory = new EditorViewModelDatabaseFactory(mDb, id);
-        EditorViewModelDatabase editorViewModelDatabase = ViewModelProviders.of(this, editorViewModelDatabaseFactory).get(EditorViewModelDatabase.class);
+        editorViewModelDatabase = ViewModelProviders.of(this, editorViewModelDatabaseFactory).get(EditorViewModelDatabase.class);
         editorViewModelDatabase.getVideoEntry().observe(this, new Observer<VideoEntry>() {
             @Override
             public void onChanged(@Nullable final VideoEntry videoEntry) {
@@ -198,6 +199,9 @@ public class EditorActivity extends AppCompatActivity {
                     }
                 });
                 return true;
+            case R.id.delete:
+                showDeleteConfirmationDialog();
+                return true;
             case android.R.id.home:
                 if (!videoHasChanged) {
                     NavUtils.navigateUpFromSameTask(EditorActivity.this);
@@ -215,6 +219,31 @@ public class EditorActivity extends AppCompatActivity {
             default:
                 return super.onOptionsItemSelected(item);
         }
+    }
+
+    private void showDeleteConfirmationDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage(R.string.delete_dialog_message);
+        builder.setPositiveButton(R.string.delete, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                dataBaseExecutor.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        mDb.videoDao().deleteVideo(editorViewModelDatabase.getVideoEntry().getValue());
+                        finish();
+                    }
+                });
+            }
+        });
+        builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                if (dialog != null) {
+                    dialog.dismiss();
+                }
+            }
+        });
+        AlertDialog alertDialog = builder.create();
+        alertDialog.show();
     }
 
     @Override

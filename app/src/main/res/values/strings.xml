@@ -25,4 +25,5 @@
     <string name="discard">Discard</string>
     <string name="keep_editing">Keep Editing</string>
     <string name="snackbar_message">Video requires a title</string>
+    <string name="delete_dialog_message">Delete this video data?</string>
 </resources>
