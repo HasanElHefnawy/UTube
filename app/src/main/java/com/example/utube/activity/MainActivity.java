@@ -38,7 +38,6 @@ import com.jakewharton.rxbinding2.widget.RxTextView;
 import com.jakewharton.rxbinding2.widget.TextViewTextChangeEvent;
 
 import org.joda.time.DateTime;
-import org.joda.time.Period;
 
 import java.util.List;
 import java.util.concurrent.Executor;
@@ -83,13 +82,12 @@ public class MainActivity extends AppCompatActivity {
                 new ItemClickSupport.OnItemLongClickListener() {
                     @Override
                     public boolean onItemLongClicked(RecyclerView recyclerView, int position, final View v) {
-                        Toast.makeText(MainActivity.this, "onLongClick " + v.getTag(), Toast.LENGTH_SHORT).show();
                         AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
                         View.inflate(MainActivity.this, R.layout.dialog, null);
                         CharSequence[] dialogButtons = new CharSequence[]{
-                                getString(R.string.dialog_button_update),
-                                getString(R.string.dialog_button_delete),
-                                getString(R.string.dialog_button_cancel)};
+                                getString(R.string.update),
+                                getString(R.string.delete),
+                                getString(android.R.string.cancel)};
                         builder.setItems(dialogButtons,
                                 new DialogInterface.OnClickListener() {
                                     public void onClick(DialogInterface dialog, int which) {
@@ -188,7 +186,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public Videos.Item apply(Video video) {
                         String duration = video.getItems().get(0).getContentDetails().getDuration();
-                        item.setDuration(parseDuration(duration));
+                        item.setDuration(duration);
                         return item;
                     }
                 });
@@ -234,17 +232,6 @@ public class MainActivity extends AppCompatActivity {
                 binding.recyclerView.setLayoutManager(new LinearLayoutManager(MainActivity.this));
             }
         });
-    }
-
-    private String parseDuration(String duration) {
-        Period period = Period.parse(duration);
-        int hours = period.getHours();
-        int mins = period.getMinutes();
-        int secs = period.getSeconds();
-        if (hours == 0)
-            return String.format(getResources().getStringArray(R.array.duration)[0], mins, secs);
-        else
-            return String.format(getResources().getStringArray(R.array.duration)[1], hours, mins, secs);
     }
 
     @Override

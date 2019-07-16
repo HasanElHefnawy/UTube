@@ -16,10 +16,13 @@
     <string name="setting_video_duration_value_long">long</string>
     <string name="setting_video_duration_value_medium">medium</string>
     <string name="setting_video_duration_value_short">short</string>
-    <string name="dialog_button_update">Update</string>
-    <string name="dialog_button_delete">Delete</string>
-    <string name="dialog_button_cancel">Cancel</string>
+    <string name="update">Update</string>
+    <string name="delete">Delete</string>
     <string name="editor_activity_title">Title</string>
     <string name="editor_activity_published_at">Publish Date</string>
     <string name="editor_activity_duration">Duration</string>
+    <string name="unsaved_changes_dialog_msg">Discard your changes and quit editing?</string>
+    <string name="discard">Discard</string>
+    <string name="keep_editing">Keep Editing</string>
+    <string name="snackbar_message">Video requires a title</string>
 </resources>

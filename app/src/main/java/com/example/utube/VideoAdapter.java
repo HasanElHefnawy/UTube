@@ -10,9 +10,6 @@ import android.view.ViewGroup;
 import com.example.utube.database.VideoEntry;
 import com.example.utube.databinding.VideoItemBinding;
 
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
-
 import java.util.List;
 
 public class VideoAdapter extends RecyclerView.Adapter<VideoAdapter.ViewHolder> {
@@ -40,10 +37,8 @@ public class VideoAdapter extends RecyclerView.Adapter<VideoAdapter.ViewHolder> 
         GlideApp.with(context)
                 .load(videoEntry.getThumbnailsUrl())
                 .into(viewHolder.binding.image);
-        DateTimeFormatter dateTimeFormatter = DateTimeFormat.forPattern("MMM, d yyyy");
-        String publishDate = dateTimeFormatter.print(videoEntry.getPublishedAt());
-        viewHolder.binding.publishedAt.setText(publishDate);
-        viewHolder.binding.duration.setText(videoEntry.getDuration().equals("0:00") ? "Live" : videoEntry.getDuration());
+        viewHolder.binding.publishedAt.setText(util.getStringFromDateTime(videoEntry.getPublishedAt()));
+        viewHolder.binding.duration.setText(util.parseDuration(context, videoEntry.getDuration()));
         viewHolder.itemView.setTag(videoEntry.getId());
     }
 

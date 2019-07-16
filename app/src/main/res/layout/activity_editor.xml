@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <android.support.constraint.ConstraintLayout
+        android:id="@+id/constraintLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         tools:context=".activity.EditorActivity">
@@ -26,8 +27,9 @@
         <EditText
             android:id="@+id/title_editText"
             style="@style/EditorActivityEditTextStyle"
+            android:ems="10"
             android:inputType="textPersonName"
-            app:layout_constraintBottom_toTopOf="@id/publishedAt_editText"
+            app:layout_constraintBottom_toTopOf="@id/publishedAt_textViewDialog"
             app:layout_constraintStart_toStartOf="@id/guideline"
             app:layout_constraintTop_toTopOf="parent"
             tools:text="Name" />
@@ -36,15 +38,14 @@
             android:id="@+id/publishedAt_textView"
             style="@style/EditorActivityTextViewStyle"
             android:text="@string/editor_activity_published_at"
-            app:layout_constraintBottom_toBottomOf="@id/publishedAt_editText"
+            app:layout_constraintBottom_toBottomOf="@id/publishedAt_textViewDialog"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="@id/publishedAt_editText" />
+            app:layout_constraintTop_toTopOf="@id/publishedAt_textViewDialog" />
 
-        <EditText
-            android:id="@+id/publishedAt_editText"
+        <TextView
+            android:id="@+id/publishedAt_textViewDialog"
             style="@style/EditorActivityEditTextStyle"
-            android:inputType="date"
-            app:layout_constraintBottom_toTopOf="@id/duration_editText"
+            app:layout_constraintBottom_toTopOf="@id/duration_textViewDialog"
             app:layout_constraintStart_toStartOf="@id/guideline"
             app:layout_constraintTop_toBottomOf="@id/title_editText"
             tools:text="Name" />
@@ -53,16 +54,15 @@
             android:id="@+id/duration_textView"
             style="@style/EditorActivityTextViewStyle"
             android:text="@string/editor_activity_duration"
-            app:layout_constraintBottom_toBottomOf="@id/duration_editText"
+            app:layout_constraintBottom_toBottomOf="@id/duration_textViewDialog"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="@id/duration_editText" />
+            app:layout_constraintTop_toTopOf="@id/duration_textViewDialog" />
 
-        <EditText
-            android:id="@+id/duration_editText"
+        <TextView
+            android:id="@+id/duration_textViewDialog"
             style="@style/EditorActivityEditTextStyle"
-            android:inputType="time"
             app:layout_constraintStart_toStartOf="@id/guideline"
-            app:layout_constraintTop_toBottomOf="@id/publishedAt_editText"
+            app:layout_constraintTop_toBottomOf="@id/publishedAt_textViewDialog"
             tools:text="Name" />
     </android.support.constraint.ConstraintLayout>
 </layout>
