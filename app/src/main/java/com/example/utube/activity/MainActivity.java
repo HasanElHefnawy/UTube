@@ -81,7 +81,7 @@ public class MainActivity extends AppCompatActivity {
         ItemClickSupport.addTo(binding.recyclerView).setOnItemLongClickListener(
                 new ItemClickSupport.OnItemLongClickListener() {
                     @Override
-                    public boolean onItemLongClicked(RecyclerView recyclerView, int position, final View v) {
+                    public boolean onItemLongClicked(final RecyclerView recyclerView, final int position, final View v) {
                         AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
                         View.inflate(MainActivity.this, R.layout.dialog, null);
                         CharSequence[] dialogButtons = new CharSequence[]{
@@ -98,10 +98,16 @@ public class MainActivity extends AppCompatActivity {
                                                 startActivity(editorIntent);
                                                 break;
                                             case 1:
-                                                Toast.makeText(MainActivity.this, "clicked 2", Toast.LENGTH_SHORT).show();
+                                                dataBaseExecutor.execute(new Runnable() {
+                                                    @Override
+                                                    public void run() {
+                                                        List<VideoEntry> videoEntries = mainViewModelDatabase.getVideoEntries().getValue();
+                                                        if (videoEntries != null)
+                                                            mDb.videoDao().deleteVideo(videoEntries.get(position));
+                                                    }
+                                                });
                                                 break;
                                             case 2:
-                                                Toast.makeText(MainActivity.this, "clicked 3", Toast.LENGTH_SHORT).show();
                                                 break;
                                         }
                                     }
