@@ -179,7 +179,7 @@ public class MainActivity extends AppCompatActivity {
                         return Observable.fromIterable(items);
                     }
                 })
-                .flatMap(new Function<Videos.Item, ObservableSource<Videos.Item>>() {
+                .concatMap(new Function<Videos.Item, ObservableSource<Videos.Item>>() {
                     @Override
                     public ObservableSource<Videos.Item> apply(final Videos.Item item) {
                         return getObservableVideoDuration(item);
