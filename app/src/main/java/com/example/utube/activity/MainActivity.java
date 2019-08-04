@@ -2,10 +2,13 @@ package com.example.utube.activity;
 
 import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProviders;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.databinding.DataBindingUtil;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -147,7 +150,17 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    private boolean isConnected() {
+        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
+        return networkInfo != null && networkInfo.isConnected();
+    }
+
     public void loadVideosOverInternetWhenTextChange() {
+        if (!isConnected()) {
+            Toast.makeText(MainActivity.this, "There is no network connection", Toast.LENGTH_SHORT).show();
+            return;
+        }
         disposable.clear();
         disposable.add(mainViewModelNetwork.getTextViewTextChangeEvent(binding.searchEditText)
                 .skipInitialValue()
