@@ -26,4 +26,5 @@
     <string name="keep_editing">Keep Editing</string>
     <string name="snackbar_message">Video requires a title</string>
     <string name="delete_dialog_message">Delete this video data?</string>
+    <string name="empty_list">Empty list? No problem. Let\'s search for some videos and have fun</string>
 </resources>

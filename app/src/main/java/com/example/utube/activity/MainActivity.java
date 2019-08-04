@@ -7,6 +7,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.databinding.DataBindingUtil;
+import android.graphics.drawable.Drawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.preference.PreferenceManager;
@@ -18,6 +19,8 @@ import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
+import android.text.Html;
+import android.text.Spanned;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -84,6 +87,7 @@ public class MainActivity extends AppCompatActivity {
         binding.recyclerView.setAdapter(adapter);
         binding.recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
+        addWinkToEmptyListTextView();
         loadVideosFromDatabase();
 
         ItemClickSupport.addTo(binding.recyclerView).setOnItemLongClickListener(
@@ -269,11 +273,27 @@ public class MainActivity extends AppCompatActivity {
                     videoItems.clear();
                     videoItems.addAll(items);
                     adapter.notifyDataSetChanged();
-                    if (items.size() == 0)
-                        Toast.makeText(MainActivity.this, "Database empty", Toast.LENGTH_SHORT).show();
+                    if (adapter.getItemCount() != 0) binding.emptyList.setVisibility(View.GONE);
                 }
             }
         });
+    }
+
+    private void addWinkToEmptyListTextView() {
+        Html.ImageGetter imageGetter = new Html.ImageGetter() {
+            @Override
+            public Drawable getDrawable(String source) {
+                Drawable drawable = getResources().getDrawable(R.drawable.ic_wink);
+                drawable.setBounds(0, -5, drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight());
+                return drawable;
+            }
+        };
+        Spanned spanned = Html.fromHtml(
+                getString(R.string.empty_list) + " <img src='" + getResources().getDrawable(R.drawable.ic_wink) + "'/>",
+                imageGetter,
+                null
+        );
+        binding.emptyList.setText(spanned);
     }
 
     @Override
