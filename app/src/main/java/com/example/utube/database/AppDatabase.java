@@ -7,8 +7,10 @@ import android.arch.persistence.room.TypeConverters;
 import android.content.Context;
 import android.util.Log;
 
-@Database(entities = {VideoEntry.class}, version = 1, exportSchema = false)
-@TypeConverters(DateTimeConverter.class)
+import com.example.utube.model.Videos;
+
+@Database(entities = {Videos.Item.class}, version = 1, exportSchema = false)
+@TypeConverters(value = {IdTypeConverter.class, SnippetTypeConverter.class})
 public abstract class AppDatabase extends RoomDatabase {
 
     private static final String LOG_TAG = AppDatabase.class.getSimpleName();

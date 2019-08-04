@@ -7,17 +7,17 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
-import com.example.utube.database.VideoEntry;
 import com.example.utube.databinding.VideoItemBinding;
+import com.example.utube.model.Videos;
 
 import java.util.List;
 
 public class VideoAdapter extends RecyclerView.Adapter<VideoAdapter.ViewHolder> {
-    private List<VideoEntry> videoEntries;
+    private List<Videos.Item> videoItems;
     private Context context;
 
-    public VideoAdapter(List<VideoEntry> videoEntries, Context context) {
-        this.videoEntries = videoEntries;
+    public VideoAdapter(List<Videos.Item> videoItems, Context context) {
+        this.videoItems = videoItems;
         this.context = context;
     }
 
@@ -32,22 +32,22 @@ public class VideoAdapter extends RecyclerView.Adapter<VideoAdapter.ViewHolder> 
 
     @Override
     public void onBindViewHolder(@NonNull final ViewHolder viewHolder, int position) {
-        VideoEntry videoEntry = videoEntries.get(position);
-        viewHolder.binding.title.setText(videoEntry.getTitle());
+        Videos.Item videoItem = videoItems.get(position);
+        viewHolder.binding.title.setText(videoItem.getSnippet().getTitle());
         GlideApp.with(context)
-                .load(videoEntry.getThumbnailsUrl())
+                .load(videoItem.getSnippet().getThumbnails().getDefault().getUrl())
                 .into(viewHolder.binding.image);
-        viewHolder.binding.publishedAt.setText(util.getStringFromDateTime(videoEntry.getPublishedAt()));
-        viewHolder.binding.duration.setText(util.parseDuration(context, videoEntry.getDuration()));
-        viewHolder.itemView.setTag(videoEntry.getId());
+        viewHolder.binding.publishedAt.setText(util.parseDateTime(videoItem.getSnippet().getPublishedAt()));
+        viewHolder.binding.duration.setText(util.parseDuration(context, videoItem.getDuration()));
+        viewHolder.itemView.setTag(videoItem.getIdPrimaryKey());
     }
 
     @Override
     public int getItemCount() {
-        if (videoEntries == null) {
+        if (videoItems == null) {
             return 0;
         }
-        return videoEntries.size();
+        return videoItems.size();
     }
 
     class ViewHolder extends RecyclerView.ViewHolder {

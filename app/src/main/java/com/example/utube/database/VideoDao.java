@@ -8,23 +8,25 @@ import android.arch.persistence.room.OnConflictStrategy;
 import android.arch.persistence.room.Query;
 import android.arch.persistence.room.Update;
 
+import com.example.utube.model.Videos;
+
 import java.util.List;
 
 @Dao
 public interface VideoDao {
 
-    @Query("SELECT * FROM video ORDER BY id")
-    LiveData<List<VideoEntry>> getAllVideos();
+    @Query("SELECT * FROM video ORDER BY idPrimaryKey")
+    LiveData<List<Videos.Item>> getAllVideos();
 
     @Insert
-    void insertVideo(VideoEntry videoEntry);
+    void insertVideo(Videos.Item videoItem);
 
     @Update(onConflict = OnConflictStrategy.REPLACE)
-    void updateVideo(VideoEntry videoEntry);
+    void updateVideo(Videos.Item videoItem);
 
     @Delete
-    void deleteVideo(VideoEntry videoEntry);
+    void deleteVideo(Videos.Item videoItem);
 
-    @Query("SELECT * FROM video WHERE id = :id")
-    LiveData<VideoEntry> getVideoById(int id);
+    @Query("SELECT * FROM video WHERE idPrimaryKey = :id")
+    LiveData<Videos.Item> getVideoById(int id);
 }

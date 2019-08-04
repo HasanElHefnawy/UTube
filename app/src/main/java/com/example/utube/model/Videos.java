@@ -1,5 +1,8 @@
 package com.example.utube.model;
 
+import android.arch.persistence.room.Entity;
+import android.arch.persistence.room.PrimaryKey;
+
 import com.squareup.moshi.Json;
 
 import java.util.List;
@@ -92,8 +95,11 @@ public class Videos {
 
     }
 
+    @Entity(tableName = "video")
     public static class Item {
 
+        @PrimaryKey(autoGenerate = true)
+        private int idPrimaryKey;
         @Json(name = "kind")
         private String kind;
         @Json(name = "etag")
@@ -110,6 +116,14 @@ public class Videos {
 
         public void setDuration(String duration) {
             this.duration = duration;
+        }
+
+        public int getIdPrimaryKey() {
+            return idPrimaryKey;
+        }
+
+        public void setIdPrimaryKey(int idPrimaryKey) {
+            this.idPrimaryKey = idPrimaryKey;
         }
 
         public String getKind() {

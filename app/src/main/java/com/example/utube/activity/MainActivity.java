@@ -27,7 +27,6 @@ import com.example.utube.ItemClickSupport;
 import com.example.utube.R;
 import com.example.utube.VideoAdapter;
 import com.example.utube.database.AppDatabase;
-import com.example.utube.database.VideoEntry;
 import com.example.utube.databinding.ActivityMainBinding;
 import com.example.utube.model.Video;
 import com.example.utube.model.Videos;
@@ -39,8 +38,7 @@ import com.example.utube.viewmodel.MainViewModelNetworkFactory;
 import com.jakewharton.rxbinding2.widget.RxTextView;
 import com.jakewharton.rxbinding2.widget.TextViewTextChangeEvent;
 
-import org.joda.time.DateTime;
-
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -56,6 +54,7 @@ import io.reactivex.schedulers.Schedulers;
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "zzzzz MainActivity";
     private VideoAdapter adapter;
+    private List<Videos.Item> videoItems;
     private RetrofitApiService retrofitApiService;
     private CompositeDisposable disposable = new CompositeDisposable();
     private ActivityMainBinding binding;
@@ -77,8 +76,12 @@ public class MainActivity extends AppCompatActivity {
         MainViewModelNetworkFactory mainViewModelNetworkFactory = new MainViewModelNetworkFactory(binding.searchEditText);
         mainViewModelNetwork = ViewModelProviders.of(this, mainViewModelNetworkFactory).get(MainViewModelNetwork.class);
 
+        videoItems = new ArrayList<>();
+        adapter = new VideoAdapter(videoItems, this);
+        binding.recyclerView.setAdapter(adapter);
+        binding.recyclerView.setLayoutManager(new LinearLayoutManager(this));
+
         loadVideosFromDatabase();
-        loadVideosOverInternetWhenTextChange();
 
         ItemClickSupport.addTo(binding.recyclerView).setOnItemLongClickListener(
                 new ItemClickSupport.OnItemLongClickListener() {
@@ -96,16 +99,14 @@ public class MainActivity extends AppCompatActivity {
                                         switch (which) {
                                             case 0:
                                                 Intent editorIntent = new Intent(MainActivity.this, EditorActivity.class);
-                                                editorIntent.putExtra("id", (int) v.getTag());
+                                                editorIntent.putExtra("idPrimaryKey", (int) v.getTag());
                                                 startActivity(editorIntent);
                                                 break;
                                             case 1:
                                                 dataBaseExecutor.execute(new Runnable() {
                                                     @Override
                                                     public void run() {
-                                                        List<VideoEntry> videoEntries = mainViewModelDatabase.getVideoEntries().getValue();
-                                                        if (videoEntries != null)
-                                                            mDb.videoDao().deleteVideo(videoEntries.get(position));
+                                                        mDb.videoDao().deleteVideo(videoItems.get(position));
                                                     }
                                                 });
                                                 break;
@@ -131,9 +132,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                         int position = viewHolder.getAdapterPosition();
-                        List<VideoEntry> videoEntries = mainViewModelDatabase.getVideoEntries().getValue();
-                        if (videoEntries != null)
-                            mDb.videoDao().deleteVideo(videoEntries.get(position));
+                        mDb.videoDao().deleteVideo(videoItems.get(position));
                     }
                 });
             }
@@ -225,14 +224,12 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onNext(final Videos.Item item) {
                 Log.e(TAG, "onNext: getDisposableObserverVideos");
-                final String videoId = item.getId().getVideoId();
-                final String title = item.getSnippet().getTitle();
-                final String thumbnailsUrl = item.getSnippet().getThumbnails().getDefault().getUrl();
-                final DateTime publishedAt = DateTime.parse(item.getSnippet().getPublishedAt());
+                videoItems.add(item);
+                adapter.notifyDataSetChanged();
                 dataBaseExecutor.execute(new Runnable() {
                     @Override
                     public void run() {
-                        mDb.videoDao().insertVideo(new VideoEntry(videoId, title, thumbnailsUrl, publishedAt, item.getDuration()));
+                        mDb.videoDao().insertVideo(item);
                     }
                 });
             }
@@ -251,13 +248,17 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void loadVideosFromDatabase() {
-        mainViewModelDatabase.getVideoEntries().observe(this, new Observer<List<VideoEntry>>() {
+        mainViewModelDatabase.getVideoItemsListLiveData().observe(this, new Observer<List<Videos.Item>>() {
             @Override
-            public void onChanged(@Nullable List<VideoEntry> videoEntries) {
-                Log.e(TAG, "Updating list of video entries from LiveData in ViewModel");
-                adapter = new VideoAdapter(videoEntries, MainActivity.this);
-                binding.recyclerView.setAdapter(adapter);
-                binding.recyclerView.setLayoutManager(new LinearLayoutManager(MainActivity.this));
+            public void onChanged(@Nullable List<Videos.Item> items) {
+                if (items != null) {
+                    Log.e(TAG, "Updating list of video items from LiveData in ViewModel");
+                    videoItems.clear();
+                    videoItems.addAll(items);
+                    adapter.notifyDataSetChanged();
+                    if (items.size() == 0)
+                        Toast.makeText(MainActivity.this, "Database empty", Toast.LENGTH_SHORT).show();
+                }
             }
         });
     }

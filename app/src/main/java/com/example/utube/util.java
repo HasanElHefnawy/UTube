@@ -22,8 +22,9 @@ public class util {
             return String.format(context.getResources().getStringArray(R.array.duration)[1], hours, mins, secs);
     }
 
-    public static String getStringFromDateTime(DateTime publishedAt) {
+    public static String parseDateTime(String publishedAt) {
+        DateTime publishedAtDateTime = DateTime.parse(publishedAt);
         DateTimeFormatter dateTimeFormatter = DateTimeFormat.forPattern("MMM, d yyyy");
-        return dateTimeFormatter.print(publishedAt);
+        return dateTimeFormatter.print(publishedAtDateTime);
     }
 }

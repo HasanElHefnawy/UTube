@@ -32,8 +32,8 @@ import android.widget.TextView;
 import com.example.utube.AppExecutor;
 import com.example.utube.R;
 import com.example.utube.database.AppDatabase;
-import com.example.utube.database.VideoEntry;
 import com.example.utube.databinding.ActivityEditorBinding;
+import com.example.utube.model.Videos;
 import com.example.utube.util;
 import com.example.utube.viewmodel.EditorViewModelDatabase;
 import com.example.utube.viewmodel.EditorViewModelDatabaseFactory;
@@ -48,11 +48,9 @@ public class EditorActivity extends AppCompatActivity {
     private ActivityEditorBinding binding;
     private Executor dataBaseExecutor;
     private AppDatabase mDb;
-    private int id;
-    private String videoId;
+    private Videos.Item videoItem;
     private String title;
-    private String thumbnailsUrl;
-    private DateTime publishedAt;
+    private String publishedAt;
     private String duration;
     private boolean videoHasChanged = false;
     private EditorViewModelDatabase editorViewModelDatabase;
@@ -65,21 +63,19 @@ public class EditorActivity extends AppCompatActivity {
         dataBaseExecutor = AppExecutor.getInstance().dataBaseExecutor();
         mDb = AppDatabase.getInstance(this);
         Intent intent = getIntent();
-        id = intent.getIntExtra("id", -1);
-        EditorViewModelDatabaseFactory editorViewModelDatabaseFactory = new EditorViewModelDatabaseFactory(mDb, id);
+        int idPrimaryKey = intent.getIntExtra("idPrimaryKey", -1);
+        EditorViewModelDatabaseFactory editorViewModelDatabaseFactory = new EditorViewModelDatabaseFactory(mDb, idPrimaryKey);
         editorViewModelDatabase = ViewModelProviders.of(this, editorViewModelDatabaseFactory).get(EditorViewModelDatabase.class);
-        editorViewModelDatabase.getVideoEntry().observe(this, new Observer<VideoEntry>() {
+        editorViewModelDatabase.getVideoItemLiveData().observe(this, new Observer<Videos.Item>() {
             @Override
-            public void onChanged(@Nullable final VideoEntry videoEntry) {
-                if (videoEntry != null) {
-                    Log.e(TAG, "Updating current video entry from LiveData in ViewModel");
-                    videoId = videoEntry.getVideoId();
-                    title = videoEntry.getTitle();
-                    thumbnailsUrl = videoEntry.getThumbnailsUrl();
-                    publishedAt = videoEntry.getPublishedAt();
-                    duration = videoEntry.getDuration();
+            public void onChanged(@Nullable final Videos.Item videoItem) {
+                if (videoItem != null) {
+                    Log.e(TAG, "Updating current video item from LiveData in ViewModel");
+                    title = videoItem.getSnippet().getTitle();
+                    publishedAt = videoItem.getSnippet().getPublishedAt();
+                    duration = videoItem.getDuration();
                     binding.titleEditText.setText(title);
-                    binding.publishedAtTextViewDialog.setText(util.getStringFromDateTime(publishedAt));
+                    binding.publishedAtTextViewDialog.setText(util.parseDateTime(publishedAt));
                     Period period = Period.parse(duration);
                     final int[] hours = {period.getHours()};
                     final int[] mins = {period.getMinutes()};
@@ -90,17 +86,17 @@ public class EditorActivity extends AppCompatActivity {
                         DatePickerDialog.OnDateSetListener mDateSetListener = new DatePickerDialog.OnDateSetListener() {
                             @Override
                             public void onDateSet(DatePicker datePicker, int year, int month, int day) {
-                                publishedAt = DateTime.parse(year + "-" + (month + 1) + "-" + day + "T" + publishedAt.toLocalTime() + "Z");
-                                videoEntry.setPublishedAt(publishedAt);
-                                binding.publishedAtTextViewDialog.setText(util.getStringFromDateTime(publishedAt));
+                                publishedAt = DateTime.parse(year + "-" + (month + 1) + "-" + day + "T" + DateTime.parse(publishedAt).toLocalTime() + "Z").toString();
+                                videoItem.getSnippet().setPublishedAt(publishedAt);
+                                binding.publishedAtTextViewDialog.setText(util.parseDateTime(publishedAt));
                             }
                         };
 
                         @Override
                         public void onClick(View view) {
-                            int year = publishedAt.getYear();
-                            int month = publishedAt.getMonthOfYear();
-                            int day = publishedAt.getDayOfMonth();
+                            int year = DateTime.parse(publishedAt).getYear();
+                            int month = DateTime.parse(publishedAt).getMonthOfYear();
+                            int day = DateTime.parse(publishedAt).getDayOfMonth();
                             DatePickerDialog dialog = new DatePickerDialog(
                                     EditorActivity.this,
                                     android.R.style.Theme_Holo_Light_Dialog_MinWidth,
@@ -143,7 +139,7 @@ public class EditorActivity extends AppCompatActivity {
                                     mins[0] = numberPickerMinutes.getValue();
                                     secs[0] = numberPickerSeconds.getValue();
                                     duration = "PT" + hours[0] + "H" + mins[0] + "M" + secs[0] + "S";
-                                    videoEntry.setDuration(duration);
+                                    videoItem.setDuration(duration);
                                     binding.durationTextViewDialog.setText(util.parseDuration(EditorActivity.this, duration));
                                     alertDialog.dismiss();
                                 }
@@ -189,12 +185,14 @@ public class EditorActivity extends AppCompatActivity {
                     imm.hideSoftInputFromWindow(binding.titleEditText.getWindowToken(), 0);
                     return true;
                 }
-                final VideoEntry videoEntry = new VideoEntry(videoId, title, thumbnailsUrl, publishedAt, duration);
+                videoItem = editorViewModelDatabase.getVideoItemLiveData().getValue();
                 dataBaseExecutor.execute(new Runnable() {
                     @Override
                     public void run() {
-                        videoEntry.setId(id);
-                        mDb.videoDao().updateVideo(videoEntry);
+                        videoItem.getSnippet().setTitle(title);
+                        videoItem.getSnippet().setPublishedAt(publishedAt);
+                        videoItem.setDuration(duration);
+                        mDb.videoDao().updateVideo(videoItem);
                         finish();
                     }
                 });
@@ -229,7 +227,7 @@ public class EditorActivity extends AppCompatActivity {
                 dataBaseExecutor.execute(new Runnable() {
                     @Override
                     public void run() {
-                        mDb.videoDao().deleteVideo(editorViewModelDatabase.getVideoEntry().getValue());
+                        mDb.videoDao().deleteVideo(editorViewModelDatabase.getVideoItemLiveData().getValue());
                         finish();
                     }
                 });
