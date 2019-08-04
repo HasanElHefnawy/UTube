@@ -41,8 +41,11 @@ import com.example.utube.network.RetrofitApiService;
 import com.example.utube.viewmodel.MainViewModelDatabase;
 import com.example.utube.viewmodel.MainViewModelNetwork;
 import com.example.utube.viewmodel.MainViewModelNetworkFactory;
+import com.jakewharton.retrofit2.adapter.rxjava2.HttpException;
 import com.jakewharton.rxbinding2.widget.RxTextView;
 import com.jakewharton.rxbinding2.widget.TextViewTextChangeEvent;
+
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -56,6 +59,7 @@ import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.functions.Function;
 import io.reactivex.observers.DisposableObserver;
 import io.reactivex.schedulers.Schedulers;
+import retrofit2.Response;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "zzzzz MainActivity";
@@ -254,7 +258,18 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onError(Throwable throwable) {
                 Log.e(TAG, "onError: getDisposableObserverVideos " + throwable);
-                Toast.makeText(MainActivity.this, "Error!!!", Toast.LENGTH_SHORT).show();
+                if (throwable instanceof HttpException) {
+                    Response response = ((HttpException) throwable).response();
+                    Log.e(TAG, "onError: response " + response);
+                    if (response != null && response.errorBody() != null) {
+                        try {
+                            JSONObject jObjError = new JSONObject(response.errorBody().string());
+                            Toast.makeText(MainActivity.this, jObjError.getJSONObject("error").getString("message"), Toast.LENGTH_LONG).show();
+                        } catch (Exception e) {
+                            Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
+                        }
+                    }
+                }
             }
 
             @Override
