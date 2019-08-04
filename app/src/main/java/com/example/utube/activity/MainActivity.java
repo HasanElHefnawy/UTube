@@ -173,36 +173,37 @@ public class MainActivity extends AppCompatActivity {
         disposable.add(mainViewModelNetwork.getTextViewTextChangeEvent(binding.searchEditText)
                 .skipInitialValue()
                 .debounce(300, TimeUnit.MILLISECONDS)
-                .switchMap(new Function<TextViewTextChangeEvent, Observable<Videos>>() {
+                .switchMap(new Function<TextViewTextChangeEvent, Observable<Videos.Item>>() {
                     @Override
-                    public Observable<Videos> apply(TextViewTextChangeEvent textViewTextChangeEvent) {
-                        return getObservableAllVideos(textViewTextChangeEvent);
-                    }
-                })
-                .map(new Function<Videos, List<Videos.Item>>() {
-                    @Override
-                    public List<Videos.Item> apply(Videos videos) {
-                        return videos.getItems();
-                    }
-                })
-                .flatMap(new Function<List<Videos.Item>, ObservableSource<Videos.Item>>() {
-                    @Override
-                    public ObservableSource<Videos.Item> apply(List<Videos.Item> items) {
-                        if (items.size() != 0) {
-                            dataBaseExecutor.execute(new Runnable() {
-                                @Override
-                                public void run() {
-                                    mDb.clearAllTables();
-                                }
-                            });
-                        }
-                        return Observable.fromIterable(items);
-                    }
-                })
-                .concatMap(new Function<Videos.Item, ObservableSource<Videos.Item>>() {
-                    @Override
-                    public ObservableSource<Videos.Item> apply(final Videos.Item item) {
-                        return getObservableVideoDuration(item);
+                    public Observable<Videos.Item> apply(TextViewTextChangeEvent textViewTextChangeEvent) {
+                        Log.e(TAG, "apply: " + textViewTextChangeEvent.text());
+                        return getObservableAllVideos(textViewTextChangeEvent)
+                                .map(new Function<Videos, List<Videos.Item>>() {
+                                    @Override
+                                    public List<Videos.Item> apply(Videos videos) {
+                                        return videos.getItems();
+                                    }
+                                })
+                                .flatMap(new Function<List<Videos.Item>, ObservableSource<Videos.Item>>() {
+                                    @Override
+                                    public ObservableSource<Videos.Item> apply(List<Videos.Item> items) {
+                                        if (items.size() != 0) {
+                                            dataBaseExecutor.execute(new Runnable() {
+                                                @Override
+                                                public void run() {
+                                                    mDb.clearAllTables();
+                                                }
+                                            });
+                                        }
+                                        return Observable.fromIterable(items);
+                                    }
+                                })
+                                .concatMap(new Function<Videos.Item, ObservableSource<Videos.Item>>() {
+                                    @Override
+                                    public ObservableSource<Videos.Item> apply(final Videos.Item item) {
+                                        return getObservableVideoDuration(item);
+                                    }
+                                });
                     }
                 })
                 .subscribeWith(getDisposableObserverVideos())
@@ -244,7 +245,7 @@ public class MainActivity extends AppCompatActivity {
         return new DisposableObserver<Videos.Item>() {
             @Override
             public void onNext(final Videos.Item item) {
-                Log.e(TAG, "onNext: getDisposableObserverVideos");
+                Log.e(TAG, "onNext: getDisposableObserverVideos " + item.getSnippet().getTitle());
                 videoItems.add(item);
                 adapter.notifyDataSetChanged();
                 dataBaseExecutor.execute(new Runnable() {
