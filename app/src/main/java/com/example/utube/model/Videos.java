@@ -1,6 +1,9 @@
 package com.example.utube.model;
 
+import android.arch.persistence.room.Embedded;
 import android.arch.persistence.room.Entity;
+import android.arch.persistence.room.Ignore;
+import android.arch.persistence.room.Index;
 import android.arch.persistence.room.PrimaryKey;
 
 import com.squareup.moshi.Json;
@@ -95,7 +98,7 @@ public class Videos {
 
     }
 
-    @Entity(tableName = "video")
+    @Entity(tableName = "video", indices = {@Index(value = {"videoId"}, unique = true)})
     public static class Item {
 
         @PrimaryKey(autoGenerate = true)
@@ -104,6 +107,7 @@ public class Videos {
         private String kind;
         @Json(name = "etag")
         private String etag;
+        @Embedded
         @Json(name = "id")
         private Id id;
         @Json(name = "snippet")
@@ -158,8 +162,13 @@ public class Videos {
             this.snippet = snippet;
         }
 
+        public boolean equals(Item item) {
+            return (this == item);
+        }
+
         public static class Id {
 
+            @Ignore
             @Json(name = "kind")
             private String kind;
             @Json(name = "videoId")

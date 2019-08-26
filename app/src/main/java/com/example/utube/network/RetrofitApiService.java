@@ -16,6 +16,7 @@ public interface RetrofitApiService {
             @Query("q") String query,
             @Query("part") String part,
             @Query("type") String type,
+            @Query("pageToken") String page,
             @Query("maxResults") String maxResults,
             @Query("videoDuration") String videoDuration);
 

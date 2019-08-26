@@ -15,10 +15,10 @@ import java.util.List;
 @Dao
 public interface VideoDao {
 
-    @Query("SELECT * FROM video ORDER BY idPrimaryKey")
-    LiveData<List<Videos.Item>> getAllVideos();
+    @Query("SELECT * FROM video WHERE idPrimaryKey >= :id ORDER BY idPrimaryKey LIMIT :size")
+    List<Videos.Item> getAllVideos(int id, int size);
 
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     void insertVideo(Videos.Item videoItem);
 
     @Update(onConflict = OnConflictStrategy.REPLACE)
@@ -26,6 +26,9 @@ public interface VideoDao {
 
     @Delete
     void deleteVideo(Videos.Item videoItem);
+
+    @Query("DELETE FROM video WHERE videoId = :videoId")
+    void deleteVideo2(String videoId);
 
     @Query("SELECT * FROM video WHERE idPrimaryKey = :id")
     LiveData<Videos.Item> getVideoById(int id);

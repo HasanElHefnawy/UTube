@@ -13,21 +13,23 @@ import com.example.utube.model.Videos;
 @TypeConverters(value = {IdTypeConverter.class, SnippetTypeConverter.class})
 public abstract class AppDatabase extends RoomDatabase {
 
-    private static final String LOG_TAG = AppDatabase.class.getSimpleName();
+    private static final String TAG = "zzzzz " + AppDatabase.class.getSimpleName();
     private static final Object LOCK = new Object();
-    private static final String DATABASE_NAME = "Video Database";
+    public static final String DATABASE_NAME = "Video Database";
+    public static final String TABLE_NAME = "video";
     private static AppDatabase sInstance;
 
     public static AppDatabase getInstance(Context context) {
+        Log.e(TAG, "getInstance: sInstance " + sInstance);
         if (sInstance == null) {
             synchronized (LOCK) {
-                Log.d(LOG_TAG, "Creating new database instance");
+                Log.e(TAG, "Creating new database instance");
                 sInstance = Room.databaseBuilder(context.getApplicationContext(),
                         AppDatabase.class, AppDatabase.DATABASE_NAME)
                         .build();
             }
         }
-        Log.d(LOG_TAG, "Getting the database instance");
+        Log.e(TAG, "Getting the database instance");
         return sInstance;
     }
 
