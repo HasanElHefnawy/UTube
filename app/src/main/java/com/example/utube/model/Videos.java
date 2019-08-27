@@ -110,6 +110,7 @@ public class Videos {
         @Embedded
         @Json(name = "id")
         private Id id;
+        @Embedded
         @Json(name = "snippet")
         private Snippet snippet;
         private String duration;

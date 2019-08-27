@@ -9,7 +9,6 @@ import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
-import android.widget.Toast;
 
 import com.example.utube.databinding.VideoItemBinding;
 import com.example.utube.model.Videos;
@@ -43,7 +42,7 @@ public class VideoAdapter extends PagedListAdapter<Videos.Item, VideoAdapter.Vie
             viewHolder.binding.duration.setText(util.parseDuration(context, videoItem.getDuration()));
             viewHolder.itemView.setTag(videoItem.getIdPrimaryKey());
         } else {
-            Toast.makeText(context, "Item is null", Toast.LENGTH_LONG).show();
+            Log.e(TAG, String.format("Item at position %d is null", position));
         }
     }
 

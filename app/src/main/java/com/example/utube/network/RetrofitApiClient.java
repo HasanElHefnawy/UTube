@@ -51,8 +51,8 @@ public class RetrofitApiClient {
                 Request original = chain.request();
                 HttpUrl originalHttpUrl = original.url();
                 HttpUrl url = originalHttpUrl.newBuilder()
-//                        .addQueryParameter("key", "AIzaSyAc8VIB-o1G1px3D27PvpnAF-6je3flzOU")
-                        .addQueryParameter("key", "AIzaSyB8Gp7tSeFeIfgRffnBA6BR2UOF9IZj_dg")
+                        .addQueryParameter("key", "AIzaSyAc8VIB-o1G1px3D27PvpnAF-6je3flzOU")
+//                        .addQueryParameter("key", "AIzaSyB8Gp7tSeFeIfgRffnBA6BR2UOF9IZj_dg")
 //                        .addQueryParameter("key", "AIzaSyBshu2vqOrJr3OZzuShPu3ZncuXBfLvPqY")
 //                        .addQueryParameter("key", "AIzaSyA5MQOEdLD_8zTUsAFdREy-eEhiu_6E1sI")
                         .build();

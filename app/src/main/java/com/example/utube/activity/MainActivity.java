@@ -3,14 +3,13 @@ package com.example.utube.activity;
 import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProviders;
 import android.arch.paging.PagedList;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.databinding.DataBindingUtil;
 import android.graphics.drawable.Drawable;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
+import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AlertDialog;
@@ -21,13 +20,11 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
 import android.text.Html;
 import android.text.Spanned;
-import android.text.TextUtils;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Toast;
 
 import com.example.utube.AppExecutor;
 import com.example.utube.ItemClickSupport;
@@ -36,6 +33,7 @@ import com.example.utube.VideoAdapter;
 import com.example.utube.database.AppDatabase;
 import com.example.utube.databinding.ActivityMainBinding;
 import com.example.utube.model.Videos;
+import com.example.utube.util;
 import com.example.utube.viewmodel.ItemViewModel;
 import com.example.utube.viewmodel.ItemViewModelFactory;
 import com.jakewharton.rxbinding2.widget.RxTextView;
@@ -58,8 +56,8 @@ public class MainActivity extends AppCompatActivity {
     private ActivityMainBinding binding;
     private Executor dataBaseExecutor;
     private AppDatabase mDb;
-    private ItemViewModel itemViewModelForNetwork;
-    private ItemViewModel itemViewModelForDatabase;
+    private SharedPreferences sharedPreferences;
+    private ItemViewModel itemViewModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,8 +71,30 @@ public class MainActivity extends AppCompatActivity {
         binding.recyclerView.setAdapter(adapter);
         binding.recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        final String query = sharedPreferences.getString("query", "");
+        binding.searchEditText.setText(query);
+        Log.e(TAG, "onCreate: query " + query);
+
+        util.checkNetworkConnection(this);
         addWinkToEmptyListTextView();
-        loadVideosFromDatabase();
+        dataBaseExecutor.execute(new Runnable() {
+            @Override
+            public void run() {
+                if (mDb.videoDao().getAllVideos().size() != 0) {
+                    ItemViewModelFactory itemViewModelFactory = new ItemViewModelFactory(getApplication(), query);
+                    itemViewModel = ViewModelProviders.of(MainActivity.this, itemViewModelFactory).get(ItemViewModel.class);
+                    getVideosFromDatabase(itemViewModel);
+                }
+            }
+        });
+
+        binding.searchEditText.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                prepareLoadingVideosFromDatabase();
+            }
+        });
 
         ItemClickSupport.addTo(binding.recyclerView).setOnItemLongClickListener(
                 new ItemClickSupport.OnItemLongClickListener() {
@@ -101,27 +121,15 @@ public class MainActivity extends AppCompatActivity {
                                                     public void run() {
                                                         Log.e(TAG, "case 1 position " + position);
                                                         if (adapter.getCurrentList() != null) {
-                                                            int sizeBefore = mDb.videoDao().getAllVideos(0, 1000).size();
+                                                            int sizeBefore = mDb.videoDao().getAllVideos().size();
                                                             Log.e(TAG, "case 1 sizeBefore " + sizeBefore);
                                                             final Videos.Item item = adapter.getCurrentList().get(position);
                                                             if (item != null) {
                                                                 Log.e(TAG, "case 1 item.getIdPrimaryKey() " + item.getIdPrimaryKey() + " " + item.getSnippet().getTitle());
-                                                                // mDb.videoDao().deleteVideo(item);
-                                                                mDb.videoDao().deleteVideo2(item.getId().getVideoId());
+                                                                mDb.videoDao().deleteVideo(item);
                                                             }
-                                                            int sizeAfter = mDb.videoDao().getAllVideos(0, 1000).size();
+                                                            int sizeAfter = mDb.videoDao().getAllVideos().size();
                                                             Log.e(TAG, "case 1 sizeAfter " + sizeAfter);
-                                                            runOnUiThread(new Runnable() {
-                                                                @Override
-                                                                public void run() {
-                                                                    if (isConnected() && !TextUtils.isEmpty(binding.searchEditText.getText().toString())) {
-                                                                        adapter.getCurrentList().remove(item);
-                                                                        adapter.notifyItemRemoved(position);
-                                                                    } else {
-                                                                        loadVideosFromDatabase();
-                                                                    }
-                                                                }
-                                                            });
                                                         }
                                                     }
                                                 });
@@ -150,54 +158,24 @@ public class MainActivity extends AppCompatActivity {
                         final int position = viewHolder.getAdapterPosition();
                         Log.e(TAG, "onSwiped position " + position);
                         if (adapter.getCurrentList() != null) {
-                            int sizeBefore = mDb.videoDao().getAllVideos(0, 1000).size();
+                            int sizeBefore = mDb.videoDao().getAllVideos().size();
                             Log.e(TAG, "onSwiped sizeBefore " + sizeBefore);
                             final Videos.Item item = adapter.getCurrentList().get(position);
                             if (item != null) {
                                 Log.e(TAG, "onSwiped item.getIdPrimaryKey() " + item.getIdPrimaryKey() + " " + item.getSnippet().getTitle());
-                                // mDb.videoDao().deleteVideo(item);
-                                mDb.videoDao().deleteVideo2(item.getId().getVideoId());
+                                mDb.videoDao().deleteVideo(item);
                             }
-                            int sizeAfter = mDb.videoDao().getAllVideos(0, 1000).size();
+                            int sizeAfter = mDb.videoDao().getAllVideos().size();
                             Log.e(TAG, "onSwiped sizeAfter " + sizeAfter);
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    if (isConnected() && !TextUtils.isEmpty(binding.searchEditText.getText().toString())) {
-                                        adapter.getCurrentList().remove(item);
-                                        adapter.notifyItemRemoved(position);
-                                    } else {
-                                        loadVideosFromDatabase();
-                                    }
-                                }
-                            });
                         }
                     }
                 });
             }
         }).attachToRecyclerView(binding.recyclerView);
-
-        binding.searchEditText.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (isConnected()) {
-                    loadVideosOverInternetWhenTextChange();
-                } else {
-                    Toast.makeText(MainActivity.this, "There is no network connection", Toast.LENGTH_SHORT).show();
-                }
-            }
-        });
     }
 
-    private boolean isConnected() {
-        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
-        Log.e(TAG, "isConnected: " + (networkInfo != null && networkInfo.isConnected()));
-        return networkInfo != null && networkInfo.isConnected();
-    }
-
-    private void loadVideosOverInternetWhenTextChange() {
-        Log.e(TAG, "loadVideosOverInternetWhenTextChange: ");
+    private void prepareLoadingVideosFromDatabase() {
+        Log.e(TAG, "prepareLoadingVideosFromDatabase: ");
         disposable.clear();
         disposable.add(RxTextView.textChangeEvents(binding.searchEditText)
                 .skipInitialValue()
@@ -206,6 +184,10 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public Observable<TextViewTextChangeEvent> apply(TextViewTextChangeEvent textViewTextChangeEvent) {
                         Log.e(TAG, "apply: textViewTextChangeEvent " + textViewTextChangeEvent.text().toString());
+                        SharedPreferences.Editor editor = sharedPreferences.edit();
+                        editor.putString("query", textViewTextChangeEvent.text().toString());
+                        editor.putString("nextPageToken", "");
+                        editor.apply();
                         return Observable.just(textViewTextChangeEvent);
                     }
                 })
@@ -213,9 +195,13 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onNext(TextViewTextChangeEvent textViewTextChangeEvent) {
                         Log.e(TAG, "onNext: textViewTextChangeEvent " + textViewTextChangeEvent.text().toString());
-                        itemViewModelForNetwork = new ItemViewModel(getApplication(), textViewTextChangeEvent.text().toString());
-                        Log.e(TAG, "onNext: itemViewModelForNetwork " + itemViewModelForNetwork);
-                        getVideosFromInternet();
+                        itemViewModel = new ItemViewModel(getApplication(), textViewTextChangeEvent.text().toString());
+                        Log.e(TAG, "prepareLoadingVideosFromDatabase: itemViewModel " + itemViewModel);
+                        Log.e(TAG, "prepareLoadingVideosFromDatabase Before adapter.submitList: adapter.getItemCount() " + adapter.getItemCount());
+                        Log.e(TAG, "prepareLoadingVideosFromDatabase Before adapter.submitList: adapter.getCurrentList() " + adapter.getCurrentList());
+                        getVideosFromDatabase(itemViewModel);
+                        Log.e(TAG, "prepareLoadingVideosFromDatabase After adapter.submitList: adapter.getItemCount() " + adapter.getItemCount());
+                        Log.e(TAG, "prepareLoadingVideosFromDatabase After adapter.submitList: adapter.getCurrentList() " + adapter.getCurrentList());
                     }
 
                     @Override
@@ -230,65 +216,32 @@ public class MainActivity extends AppCompatActivity {
                 }));
     }
 
-    private void getVideosFromInternet() {
-        Log.e(TAG, "getVideosFromInternet: binding.searchEditText.getText().toString() " + binding.searchEditText.getText().toString());
-        itemViewModelForNetwork.getNetworkPagedList().observe(MainActivity.this, new Observer<PagedList<Videos.Item>>() {
-            @Override
-            public void onChanged(@Nullable PagedList<Videos.Item> items) {
-                Log.e(TAG, "getVideosFromInternet onChanged: getNetworkPagedList ");
-                if (items != null) {
-                    Log.e(TAG, "getVideosFromInternet onChanged: items.size() " + items.size());
-                    for (Videos.Item item : items)
-                        Log.e(TAG, "getVideosFromInternet onChanged: item.getIdPrimaryKey() " + item.getIdPrimaryKey() + " " + item.getSnippet().getTitle());
-                    Log.e(TAG, "getVideosFromInternet onChanged: Before adapter.submitList: adapter.getItemCount() " + adapter.getItemCount());
-                    Log.e(TAG, "getVideosFromInternet onChanged: Before adapter.submitList: adapter.getCurrentList() " + adapter.getCurrentList());
-                    adapter.submitList(items);
-                    Log.e(TAG, "getVideosFromInternet onChanged: After adapter.submitList: adapter.getItemCount() " + adapter.getItemCount());
-                    Log.e(TAG, "getVideosFromInternet onChanged: After adapter.submitList: adapter.getCurrentList() " + adapter.getCurrentList());
-                    if (items.size() == 0) {
-                        binding.emptyList.setVisibility(View.VISIBLE);
-                        Log.e(TAG, "getVideosFromInternet onChanged: binding.emptyList.setVisibility(View.VISIBLE)");
-                    } else {
-                        binding.emptyList.setVisibility(View.GONE);
-                        Log.e(TAG, "getVideosFromInternet onChanged: binding.emptyList.setVisibility(View.GONE)");
-                    }
-                }
-            }
-        });
-    }
-
-    private void loadVideosFromDatabase() {
-        ItemViewModelFactory itemViewModelFactoryForDatabase = new ItemViewModelFactory(getApplication(), "zzzzz");
-        Log.e(TAG, "loadVideosFromDatabase: itemViewModelFactoryForDatabase " + itemViewModelFactoryForDatabase);
-        itemViewModelForDatabase = ViewModelProviders.of(MainActivity.this, itemViewModelFactoryForDatabase).get(ItemViewModel.class);
-        Log.e(TAG, "loadVideosFromDatabase: itemViewModelForDatabase " + itemViewModelForDatabase);
-        Log.e(TAG, "loadVideosFromDatabase Before adapter.submitList: adapter.getItemCount() " + adapter.getItemCount());
-        Log.e(TAG, "loadVideosFromDatabase Before adapter.submitList: adapter.getCurrentList() " + adapter.getCurrentList());
-        getVideosFromDatabase();
-        Log.e(TAG, "loadVideosFromDatabase After adapter.submitList: adapter.getItemCount() " + adapter.getItemCount());
-        Log.e(TAG, "loadVideosFromDatabase After adapter.submitList: adapter.getCurrentList() " + adapter.getCurrentList());
-    }
-
-    private void getVideosFromDatabase() {
+    private void getVideosFromDatabase(ItemViewModel itemViewModel) {
         dataBaseExecutor.execute(new Runnable() {
             @Override
             public void run() {
-                List<Videos.Item> items = mDb.videoDao().getAllVideos(0, 1000);
+                List<Videos.Item> items = mDb.videoDao().getAllVideos();
                 Log.e(TAG, "getVideosFromDatabase: items.size() " + items.size());
                 for (Videos.Item item : items) {
                     Log.e(TAG, "getVideosFromDatabase: item.getIdPrimaryKey() " + item.getIdPrimaryKey() + " " + item.getSnippet().getTitle());
                 }
             }
         });
-        itemViewModelForDatabase.getDatabasePagedList().observe(MainActivity.this, new Observer<PagedList<Videos.Item>>() {
+        itemViewModel.getDatabasePagedList().observe(MainActivity.this, new Observer<PagedList<Videos.Item>>() {
             @Override
             public void onChanged(@Nullable PagedList<Videos.Item> items) {
                 Log.e(TAG, "getVideosFromDatabase onChanged: getDatabasePagedList ");
                 if (items != null) {
                     Log.e(TAG, "Updating list of video items from LiveData in ViewModel");
                     Log.e(TAG, "getVideosFromDatabase onChanged: items.size() " + items.size());
+                    int nullItem = 0;
                     for (Videos.Item item : items) {
-                        Log.e(TAG, "getVideosFromDatabase onChanged: item.getIdPrimaryKey() " + item.getIdPrimaryKey() + " " + item.getSnippet().getTitle());
+                        if (item != null) {
+                            Log.e(TAG, "getVideosFromDatabase onChanged: item.getIdPrimaryKey() " + item.getIdPrimaryKey() + " " + item.getSnippet().getTitle());
+                        } else {
+                            nullItem++;
+                            Log.e(TAG, "getVideosFromDatabase onChanged: null item " + nullItem);
+                        }
                     }
                     Log.e(TAG, "getVideosFromDatabase onChanged: Before adapter.submitList: adapter.getItemCount() " + adapter.getItemCount());
                     Log.e(TAG, "getVideosFromDatabase onChanged: Before adapter.submitList: adapter.getCurrentList() " + adapter.getCurrentList());

@@ -10,13 +10,12 @@ import android.util.Log;
 import com.example.utube.model.Videos;
 
 @Database(entities = {Videos.Item.class}, version = 1, exportSchema = false)
-@TypeConverters(value = {IdTypeConverter.class, SnippetTypeConverter.class})
+@TypeConverters(value = {IdTypeConverter.class, SnippetTypeConverter.class, ThumbnailsTypeConverter.class})
 public abstract class AppDatabase extends RoomDatabase {
 
     private static final String TAG = "zzzzz " + AppDatabase.class.getSimpleName();
     private static final Object LOCK = new Object();
-    public static final String DATABASE_NAME = "Video Database";
-    public static final String TABLE_NAME = "video";
+    private static final String DATABASE_NAME = "Video Database";
     private static AppDatabase sInstance;
 
     public static AppDatabase getInstance(Context context) {
