@@ -50,15 +50,15 @@ public class VideoAdapter extends PagedListAdapter<Videos.Item, VideoAdapter.Vie
             new DiffUtil.ItemCallback<Videos.Item>() {
                 @Override
                 public boolean areItemsTheSame(Videos.Item oldItem, Videos.Item newItem) {
-                    Log.e(TAG, "areItemsTheSame: oldItem.getIdPrimaryKey() " + oldItem.getIdPrimaryKey() + " " + oldItem.getSnippet().getTitle());
-                    Log.e(TAG, "areItemsTheSame: newItem.getIdPrimaryKey() " + newItem.getIdPrimaryKey() + " " + newItem.getSnippet().getTitle());
+                    Log.d(TAG, "areItemsTheSame: oldItem.getIdPrimaryKey() " + oldItem.getIdPrimaryKey() + " " + oldItem.getSnippet().getTitle());
+                    Log.d(TAG, "areItemsTheSame: newItem.getIdPrimaryKey() " + newItem.getIdPrimaryKey() + " " + newItem.getSnippet().getTitle());
                     return oldItem.getIdPrimaryKey() == newItem.getIdPrimaryKey();
                 }
 
                 @Override
                 public boolean areContentsTheSame(Videos.Item oldItem, Videos.Item newItem) {
-                    Log.e(TAG, "areContentsTheSame: oldItem.getIdPrimaryKey() " + oldItem.getIdPrimaryKey() + " " + oldItem.getSnippet().getTitle());
-                    Log.e(TAG, "areContentsTheSame: newItem.getIdPrimaryKey() " + newItem.getIdPrimaryKey() + " " + newItem.getSnippet().getTitle());
+                    Log.d(TAG, "areContentsTheSame: oldItem.getIdPrimaryKey() " + oldItem.getIdPrimaryKey() + " " + oldItem.getSnippet().getTitle());
+                    Log.d(TAG, "areContentsTheSame: newItem.getIdPrimaryKey() " + newItem.getIdPrimaryKey() + " " + newItem.getSnippet().getTitle());
                     return oldItem.equals(newItem);
                 }
             };

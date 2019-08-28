@@ -280,7 +280,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.settings_menu, menu);
+        inflater.inflate(R.menu.main_menu, menu);
         return true;
     }
 
@@ -289,6 +289,19 @@ public class MainActivity extends AppCompatActivity {
         if (item.getItemId() == R.id.settings) {
             Intent settingsIntent = new Intent(this, SettingsActivity.class);
             startActivity(settingsIntent);
+            return true;
+        }
+        if (item.getItemId() == R.id.clear_database) {
+            dataBaseExecutor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    int sizeBefore = mDb.videoDao().getAllVideos().size();
+                    Log.e(TAG, "mDb.clearAllTables(): sizeBefore " + sizeBefore);
+                    mDb.clearAllTables();
+                    int sizeAfter = mDb.videoDao().getAllVideos().size();
+                    Log.e(TAG, "mDb.clearAllTables(): sizeAfter " + sizeAfter);
+                }
+            });
             return true;
         }
         return super.onOptionsItemSelected(item);
