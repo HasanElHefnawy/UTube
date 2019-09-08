@@ -9,6 +9,7 @@ import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.databinding.DataBindingUtil;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -25,6 +26,7 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Toast;
 
 import com.example.utube.AppExecutor;
 import com.example.utube.ItemClickSupport;
@@ -36,9 +38,18 @@ import com.example.utube.model.Videos;
 import com.example.utube.util;
 import com.example.utube.viewmodel.ItemViewModel;
 import com.example.utube.viewmodel.ItemViewModelFactory;
+import com.google.android.gms.tasks.Continuation;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.storage.FileDownloadTask;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 import com.jakewharton.rxbinding2.widget.RxTextView;
 import com.jakewharton.rxbinding2.widget.TextViewTextChangeEvent;
 
+import java.io.File;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -49,6 +60,8 @@ import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.functions.Function;
 import io.reactivex.observers.DisposableObserver;
 
+import static com.example.utube.database.AppDatabase.DATABASE_NAME;
+
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "zzzzz MainActivity";
     private VideoAdapter adapter;
@@ -58,6 +71,8 @@ public class MainActivity extends AppCompatActivity {
     private AppDatabase mDb;
     private SharedPreferences sharedPreferences;
     private ItemViewModel itemViewModel;
+    private StorageReference videoStorageReference;
+    private Uri databaseUri;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,6 +81,15 @@ public class MainActivity extends AppCompatActivity {
         binding = DataBindingUtil.setContentView(this, R.layout.activity_main);
         dataBaseExecutor = AppExecutor.getInstance().dataBaseExecutor();
         mDb = AppDatabase.getInstance(this);
+
+        FirebaseApp firebaseApp = FirebaseApp.initializeApp(this);
+        Log.e(TAG, "onCreate: firebaseApp " + firebaseApp);
+        FirebaseStorage firebaseStorage = FirebaseStorage.getInstance();
+        videoStorageReference = firebaseStorage.getReference().child("videos.db");
+        String databasePath = getDatabasePath(DATABASE_NAME).getAbsolutePath();
+        Log.e(TAG, "onCreate: databasePath " + databasePath);
+        databaseUri = Uri.fromFile(new File(databasePath));
+        Log.e(TAG, "onCreate: databaseUri " + databaseUri);
 
         adapter = new VideoAdapter(this);
         binding.recyclerView.setAdapter(adapter);
@@ -81,6 +105,7 @@ public class MainActivity extends AppCompatActivity {
         dataBaseExecutor.execute(new Runnable() {
             @Override
             public void run() {
+                Log.e(TAG, "onCreate: mDb.videoDao().getAllVideos().size() " + mDb.videoDao().getAllVideos().size());
                 if (mDb.videoDao().getAllVideos().size() != 0) {
                     ItemViewModelFactory itemViewModelFactory = new ItemViewModelFactory(getApplication(), query);
                     itemViewModel = ViewModelProviders.of(MainActivity.this, itemViewModelFactory).get(ItemViewModel.class);
@@ -277,6 +302,47 @@ public class MainActivity extends AppCompatActivity {
         binding.emptyList.setText(spanned);
     }
 
+    private void uploadDatabaseToFirebase() {
+        videoStorageReference.putFile(databaseUri).continueWithTask(new Continuation<UploadTask.TaskSnapshot, Task<Uri>>() {
+            @Override
+            public Task<Uri> then(@NonNull Task<UploadTask.TaskSnapshot> task) throws Exception {
+                Log.e(TAG, "uploadDatabaseToFirebase then: task.isSuccessful() " + task.isSuccessful());
+                if (!task.isSuccessful() && task.getException() != null) {
+                    Log.e(TAG, "uploadDatabaseToFirebase then: task.getException() " + task.getException());
+                    throw task.getException();
+                }
+                return videoStorageReference.getDownloadUrl();
+            }
+        }).addOnCompleteListener(new OnCompleteListener<Uri>() {
+            @Override
+            public void onComplete(@NonNull Task<Uri> task) {
+                Log.e(TAG, "uploadDatabaseToFirebase onComplete: task.isSuccessful() " + task.isSuccessful());
+                if (task.isSuccessful()) {
+                    Uri downloadUri = task.getResult();
+                    Log.e(TAG, "uploadDatabaseToFirebase onComplete: downloadUri " + downloadUri);
+                    Toast.makeText(getApplicationContext(), "Upload completed successfully", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+    }
+
+    private void downloadDatabaseFromFirebase() {
+        videoStorageReference.getFile(databaseUri).continueWithTask(new Continuation<FileDownloadTask.TaskSnapshot, Task<Uri>>() {
+            @Override
+            public Task<Uri> then(@NonNull Task<FileDownloadTask.TaskSnapshot> task) throws Exception {
+                Log.e(TAG, "downloadDatabaseFromFirebase then: task.isSuccessful() " + task.isSuccessful());
+                if (!task.isSuccessful() && task.getException() != null) {
+                    Log.e(TAG, "downloadDatabaseFromFirebase then: task.getException() " + task.getException());
+                    throw task.getException();
+                }
+                Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+                startActivity(intent);
+                System.exit(0);
+                return null;
+            }
+        });
+    }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
@@ -286,23 +352,30 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == R.id.settings) {
-            Intent settingsIntent = new Intent(this, SettingsActivity.class);
-            startActivity(settingsIntent);
-            return true;
-        }
-        if (item.getItemId() == R.id.clear_database) {
-            dataBaseExecutor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    int sizeBefore = mDb.videoDao().getAllVideos().size();
-                    Log.e(TAG, "mDb.clearAllTables(): sizeBefore " + sizeBefore);
-                    mDb.clearAllTables();
-                    int sizeAfter = mDb.videoDao().getAllVideos().size();
-                    Log.e(TAG, "mDb.clearAllTables(): sizeAfter " + sizeAfter);
-                }
-            });
-            return true;
+        switch (item.getItemId()) {
+            case R.id.settings:
+                Intent settingsIntent = new Intent(this, SettingsActivity.class);
+                startActivity(settingsIntent);
+                break;
+            case R.id.upload_database:
+                uploadDatabaseToFirebase();
+                break;
+            case R.id.download_database:
+                deleteDatabase(DATABASE_NAME);
+                downloadDatabaseFromFirebase();
+                break;
+            case R.id.clear_database:
+                dataBaseExecutor.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        int sizeBefore = mDb.videoDao().getAllVideos().size();
+                        Log.e(TAG, "mDb.clearAllTables(): sizeBefore " + sizeBefore);
+                        mDb.clearAllTables();
+                        int sizeAfter = mDb.videoDao().getAllVideos().size();
+                        Log.e(TAG, "mDb.clearAllTables(): sizeAfter " + sizeAfter);
+                    }
+                });
+                break;
         }
         return super.onOptionsItemSelected(item);
     }

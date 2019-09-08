@@ -28,4 +28,6 @@
     <string name="delete_dialog_message">Delete this video data?</string>
     <string name="empty_list">Empty list? No problem. Let\'s search for some videos and have fun</string>
     <string name="clear_database">Clear Database</string>
+    <string name="upload_database">Upload Database to Firebase</string>
+    <string name="download_database">Download Database from Firebase</string>
 </resources>

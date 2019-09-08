@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "889143148125",
+    "firebase_url": "https://utube-245603.firebaseio.com",
+    "project_id": "utube-245603",
+    "storage_bucket": "utube-245603.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:889143148125:android:8d9c88004a58a9f7",
+        "android_client_info": {
+          "package_name": "com.example.utube"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "889143148125-fcc11eba8rfmomgi5cuode3aavv8f2e7.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD2-QJRIiMTkMMpBP-XFysXwE7WTygJnPU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "889143148125-fcc11eba8rfmomgi5cuode3aavv8f2e7.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
