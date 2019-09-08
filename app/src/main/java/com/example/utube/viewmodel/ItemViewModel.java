@@ -51,9 +51,10 @@ public class ItemViewModel extends ViewModel {
         this.application = application;
         this.query = query;
         mDb = AppDatabase.getInstance(application);
+        // The database must have 25 entries at least before uploading to firebase storage!!!
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(application);
-        String sizeString = sharedPreferences.getString(application.getString(R.string.setting_max_results_key), "5");
-        int size = 5;
+        String sizeString = sharedPreferences.getString(application.getString(R.string.setting_max_results_key), application.getString(R.string.setting_max_results_default_value));
+        int size = 15;
         if (sizeString != null)
             size = Integer.valueOf(sizeString);
         nextPageToken = sharedPreferences.getString("nextPageToken", "");

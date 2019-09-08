@@ -2,7 +2,7 @@
     <string name="app_name">UTube</string>
     <string name="search">Please, type your search</string>
     <string name="settings">Settings</string>
-    <string name="setting_max_results_default_value">5</string>
+    <string name="setting_max_results_default_value">15</string>
     <string name="setting_max_results_key">max_results_key</string>
     <string name="setting_max_results_title">Maximun number of results</string>
     <string name="setting_video_duration_default_value">any</string>
