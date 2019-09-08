@@ -2,14 +2,11 @@ package com.example.utube.network;
 
 import com.jakewharton.retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 
-import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.HttpUrl;
-import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
-import okhttp3.Response;
 import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
 import retrofit2.converter.moshi.MoshiConverterFactory;
@@ -45,22 +42,19 @@ public class RetrofitApiClient {
         interceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
         httpClient.addInterceptor(interceptor);
 
-        httpClient.addInterceptor(new Interceptor() {
-            @Override
-            public Response intercept(Chain chain) throws IOException {
-                Request original = chain.request();
-                HttpUrl originalHttpUrl = original.url();
-                HttpUrl url = originalHttpUrl.newBuilder()
-                        .addQueryParameter("key", "AIzaSyAc8VIB-o1G1px3D27PvpnAF-6je3flzOU")
+        httpClient.addInterceptor(chain -> {
+            Request original = chain.request();
+            HttpUrl originalHttpUrl = original.url();
+            HttpUrl url = originalHttpUrl.newBuilder()
+                    .addQueryParameter("key", "AIzaSyAc8VIB-o1G1px3D27PvpnAF-6je3flzOU")
 //                        .addQueryParameter("key", "AIzaSyB8Gp7tSeFeIfgRffnBA6BR2UOF9IZj_dg")
 //                        .addQueryParameter("key", "AIzaSyBshu2vqOrJr3OZzuShPu3ZncuXBfLvPqY")
 //                        .addQueryParameter("key", "AIzaSyA5MQOEdLD_8zTUsAFdREy-eEhiu_6E1sI")
-                        .build();
-                Request.Builder requestBuilder = original.newBuilder()
-                        .url(url);
-                Request request = requestBuilder.build();
-                return chain.proceed(request);
-            }
+                    .build();
+            Request.Builder requestBuilder = original.newBuilder()
+                    .url(url);
+            Request request = requestBuilder.build();
+            return chain.proceed(request);
         });
         okHttpClient = httpClient.build();
     }

@@ -15,7 +15,6 @@ import android.widget.Toast;
 import com.example.utube.AppExecutor;
 import com.example.utube.R;
 import com.example.utube.database.AppDatabase;
-import com.example.utube.model.Video;
 import com.example.utube.model.Videos;
 import com.example.utube.network.RetrofitApiClient;
 import com.example.utube.network.RetrofitApiService;
@@ -30,6 +29,7 @@ import java.util.concurrent.Executors;
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.functions.Function;
 import io.reactivex.observers.DisposableObserver;
 import io.reactivex.schedulers.Schedulers;
 import retrofit2.Response;
@@ -94,35 +94,17 @@ public class ItemViewModel extends ViewModel {
         isRequestInProgress = true;
         disposable.clear();
         disposable.add(Observable.just(query)
-                .switchMap(new io.reactivex.functions.Function<String, Observable<Videos.Item>>() {
-                    @Override
-                    public Observable<Videos.Item> apply(String query) {
-                        return getObservableAllVideos(nextPageToken)
-                                .map(new io.reactivex.functions.Function<Videos, List<Videos.Item>>() {
-                                    @Override
-                                    public List<Videos.Item> apply(Videos videos) {
-                                        nextPageToken = videos.getNextPageToken();
-                                        SharedPreferences.Editor editor = sharedPreferences.edit();
-                                        editor.putString("nextPageToken", nextPageToken);
-                                        editor.apply();
-                                        Log.e(TAG, "fetchVideosFromInternetAndStoreInDatabase map: nextPageToken " + nextPageToken);
-                                        return videos.getItems();
-                                    }
-                                })
-                                .flatMap(new io.reactivex.functions.Function<List<Videos.Item>, Observable<Videos.Item>>() {
-                                    @Override
-                                    public Observable<Videos.Item> apply(List<Videos.Item> items) {
-                                        return Observable.fromIterable(items);
-                                    }
-                                })
-                                .concatMap(new io.reactivex.functions.Function<Videos.Item, Observable<Videos.Item>>() {
-                                    @Override
-                                    public Observable<Videos.Item> apply(final Videos.Item item) {
-                                        return getObservableVideoDuration(item);
-                                    }
-                                });
-                    }
-                })
+                .switchMap((Function<String, Observable<Videos.Item>>) query -> getObservableAllVideos(nextPageToken)
+                        .map(videos -> {
+                            nextPageToken = videos.getNextPageToken();
+                            SharedPreferences.Editor editor = sharedPreferences.edit();
+                            editor.putString("nextPageToken", nextPageToken);
+                            editor.apply();
+                            Log.e(TAG, "fetchVideosFromInternetAndStoreInDatabase map: nextPageToken " + nextPageToken);
+                            return videos.getItems();
+                        })
+                        .flatMap((Function<List<Videos.Item>, Observable<Videos.Item>>) Observable::fromIterable)
+                        .concatMap((Function<Videos.Item, Observable<Videos.Item>>) this::getObservableVideoDuration))
                 .subscribeWith(getDisposableObserverVideos())
         );
     }
@@ -156,13 +138,10 @@ public class ItemViewModel extends ViewModel {
         )
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .map(new io.reactivex.functions.Function<Video, Videos.Item>() {
-                    @Override
-                    public Videos.Item apply(Video video) {
-                        String duration = video.getItems().get(0).getContentDetails().getDuration();
-                        item.setDuration(duration);
-                        return item;
-                    }
+                .map(video -> {
+                    String duration = video.getItems().get(0).getContentDetails().getDuration();
+                    item.setDuration(duration);
+                    return item;
                 });
     }
 
@@ -172,17 +151,14 @@ public class ItemViewModel extends ViewModel {
         return new DisposableObserver<Videos.Item>() {
             @Override
             public void onNext(final Videos.Item item) {
-                dataBaseExecutor.execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        int sizeBefore = mDb.videoDao().getAllVideos().size();
-                        Log.e(TAG, "onNext: getDisposableObserverVideos sizeBefore " + sizeBefore);
-                        mDb.videoDao().insertVideo(item);
-                        Log.e(TAG, "onNext: getDisposableObserverVideos item " + item);
-                        Log.e(TAG, "onNext: getDisposableObserverVideos " + item.getIdPrimaryKey() + "\t" + item.getSnippet().getTitle() + "\t" + item.getDuration());
-                        int sizeAfter = mDb.videoDao().getAllVideos().size();
-                        Log.e(TAG, "onNext: getDisposableObserverVideos sizeAfter " + sizeAfter);
-                    }
+                dataBaseExecutor.execute(() -> {
+                    int sizeBefore = mDb.videoDao().getAllVideos().size();
+                    Log.e(TAG, "onNext: getDisposableObserverVideos sizeBefore " + sizeBefore);
+                    mDb.videoDao().insertVideo(item);
+                    Log.e(TAG, "onNext: getDisposableObserverVideos item " + item);
+                    Log.e(TAG, "onNext: getDisposableObserverVideos " + item.getIdPrimaryKey() + "\t" + item.getSnippet().getTitle() + "\t" + item.getDuration());
+                    int sizeAfter = mDb.videoDao().getAllVideos().size();
+                    Log.e(TAG, "onNext: getDisposableObserverVideos sizeAfter " + sizeAfter);
                 });
             }
 
@@ -206,12 +182,9 @@ public class ItemViewModel extends ViewModel {
             @Override
             public void onComplete() {
                 Log.e(TAG, "onComplete: getDisposableObserverVideos");
-                dataBaseExecutor.execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        int size = mDb.videoDao().getAllVideos().size();
-                        Log.e(TAG, "onComplete: getDisposableObserverVideos size " + size);
-                    }
+                dataBaseExecutor.execute(() -> {
+                    int size = mDb.videoDao().getAllVideos().size();
+                    Log.e(TAG, "onComplete: getDisposableObserverVideos size " + size);
                 });
                 isRequestInProgress = false;
             }

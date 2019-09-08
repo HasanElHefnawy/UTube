@@ -3,14 +3,12 @@ package com.example.utube.activity;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.DatePickerDialog;
-import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.databinding.DataBindingUtil;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
-import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.NavUtils;
 import android.support.v7.app.AlertDialog;
@@ -21,7 +19,6 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
@@ -66,97 +63,80 @@ public class EditorActivity extends AppCompatActivity {
         int idPrimaryKey = intent.getIntExtra("idPrimaryKey", -1);
         EditorViewModelDatabaseFactory editorViewModelDatabaseFactory = new EditorViewModelDatabaseFactory(mDb, idPrimaryKey);
         editorViewModelDatabase = ViewModelProviders.of(this, editorViewModelDatabaseFactory).get(EditorViewModelDatabase.class);
-        editorViewModelDatabase.getVideoItemLiveData().observe(this, new Observer<Videos.Item>() {
-            @Override
-            public void onChanged(@Nullable final Videos.Item videoItem) {
-                if (videoItem != null) {
-                    Log.e(TAG, "Updating current video item from LiveData in ViewModel");
-                    title = videoItem.getSnippet().getTitle();
-                    publishedAt = videoItem.getSnippet().getPublishedAt();
-                    duration = videoItem.getDuration();
-                    binding.titleEditText.setText(title);
-                    binding.publishedAtTextViewDialog.setText(util.parseDateTime(publishedAt));
-                    Period period = Period.parse(duration);
-                    final int[] hours = {period.getHours()};
-                    final int[] mins = {period.getMinutes()};
-                    final int[] secs = {period.getSeconds()};
-                    binding.durationTextViewDialog.setText(util.parseDuration(EditorActivity.this, duration));
+        editorViewModelDatabase.getVideoItemLiveData().observe(this, videoItem -> {
+            if (videoItem != null) {
+                Log.e(TAG, "Updating current video item from LiveData in ViewModel");
+                title = videoItem.getSnippet().getTitle();
+                publishedAt = videoItem.getSnippet().getPublishedAt();
+                duration = videoItem.getDuration();
+                binding.titleEditText.setText(title);
+                binding.publishedAtTextViewDialog.setText(util.parseDateTime(publishedAt));
+                Period period = Period.parse(duration);
+                final int[] hours = {period.getHours()};
+                final int[] mins = {period.getMinutes()};
+                final int[] secs = {period.getSeconds()};
+                binding.durationTextViewDialog.setText(util.parseDuration(EditorActivity.this, duration));
 
-                    binding.publishedAtTextViewDialog.setOnClickListener(new View.OnClickListener() {
-                        DatePickerDialog.OnDateSetListener mDateSetListener = new DatePickerDialog.OnDateSetListener() {
-                            @Override
-                            public void onDateSet(DatePicker datePicker, int year, int month, int day) {
-                                publishedAt = DateTime.parse(year + "-" + (month + 1) + "-" + day + "T" + DateTime.parse(publishedAt).toLocalTime() + "Z").toString();
-                                videoItem.getSnippet().setPublishedAt(publishedAt);
-                                binding.publishedAtTextViewDialog.setText(util.parseDateTime(publishedAt));
-                            }
-                        };
-
+                binding.publishedAtTextViewDialog.setOnClickListener(new View.OnClickListener() {
+                    DatePickerDialog.OnDateSetListener mDateSetListener = new DatePickerDialog.OnDateSetListener() {
                         @Override
-                        public void onClick(View view) {
-                            int year = DateTime.parse(publishedAt).getYear();
-                            int month = DateTime.parse(publishedAt).getMonthOfYear();
-                            int day = DateTime.parse(publishedAt).getDayOfMonth();
-                            DatePickerDialog dialog = new DatePickerDialog(
-                                    EditorActivity.this,
-                                    android.R.style.Theme_Holo_Light_Dialog_MinWidth,
-                                    mDateSetListener,
-                                    year, month - 1, day);
-                            if (dialog.getWindow() != null)
-                                dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-                            dialog.show();
+                        public void onDateSet(DatePicker datePicker, int year, int month, int day) {
+                            publishedAt = DateTime.parse(year + "-" + (month + 1) + "-" + day + "T" + DateTime.parse(publishedAt).toLocalTime() + "Z").toString();
+                            videoItem.getSnippet().setPublishedAt(publishedAt);
+                            binding.publishedAtTextViewDialog.setText(util.parseDateTime(publishedAt));
                         }
-                    });
+                    };
 
-                    binding.durationTextViewDialog.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            View view = View.inflate(EditorActivity.this, R.layout.duration_dialog, null);
-                            final NumberPicker numberPickerHour = view.findViewById(R.id.numpicker_hours);
-                            numberPickerHour.setMaxValue(999);
-                            numberPickerHour.setValue(hours[0]);
-                            final NumberPicker numberPickerMinutes = view.findViewById(R.id.numpicker_minutes);
-                            numberPickerMinutes.setMaxValue(59);
-                            numberPickerMinutes.setValue(mins[0]);
-                            final NumberPicker numberPickerSeconds = view.findViewById(R.id.numpicker_seconds);
-                            numberPickerSeconds.setMaxValue(59);
-                            numberPickerSeconds.setValue(secs[0]);
-                            Button cancel = view.findViewById(R.id.cancel);
-                            Button ok = view.findViewById(R.id.ok);
-                            AlertDialog.Builder builder = new AlertDialog.Builder(EditorActivity.this);
-                            builder.setView(view);
-                            final AlertDialog alertDialog = builder.create();
-                            cancel.setOnClickListener(new View.OnClickListener() {
-                                @Override
-                                public void onClick(View v) {
-                                    alertDialog.dismiss();
-                                }
-                            });
-                            ok.setOnClickListener(new View.OnClickListener() {
-                                @Override
-                                public void onClick(View v) {
-                                    hours[0] = numberPickerHour.getValue();
-                                    mins[0] = numberPickerMinutes.getValue();
-                                    secs[0] = numberPickerSeconds.getValue();
-                                    duration = "PT" + hours[0] + "H" + mins[0] + "M" + secs[0] + "S";
-                                    videoItem.setDuration(duration);
-                                    binding.durationTextViewDialog.setText(util.parseDuration(EditorActivity.this, duration));
-                                    alertDialog.dismiss();
-                                }
-                            });
-                            alertDialog.show();
-                        }
+                    @Override
+                    public void onClick(View view) {
+                        int year = DateTime.parse(publishedAt).getYear();
+                        int month = DateTime.parse(publishedAt).getMonthOfYear();
+                        int day = DateTime.parse(publishedAt).getDayOfMonth();
+                        DatePickerDialog dialog = new DatePickerDialog(
+                                EditorActivity.this,
+                                android.R.style.Theme_Holo_Light_Dialog_MinWidth,
+                                mDateSetListener,
+                                year, month - 1, day);
+                        if (dialog.getWindow() != null)
+                            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+                        dialog.show();
+                    }
+                });
+
+                binding.durationTextViewDialog.setOnClickListener(v -> {
+                    View view = View.inflate(EditorActivity.this, R.layout.duration_dialog, null);
+                    final NumberPicker numberPickerHour = view.findViewById(R.id.numpicker_hours);
+                    numberPickerHour.setMaxValue(999);
+                    numberPickerHour.setValue(hours[0]);
+                    final NumberPicker numberPickerMinutes = view.findViewById(R.id.numpicker_minutes);
+                    numberPickerMinutes.setMaxValue(59);
+                    numberPickerMinutes.setValue(mins[0]);
+                    final NumberPicker numberPickerSeconds = view.findViewById(R.id.numpicker_seconds);
+                    numberPickerSeconds.setMaxValue(59);
+                    numberPickerSeconds.setValue(secs[0]);
+                    Button cancel = view.findViewById(R.id.cancel);
+                    Button ok = view.findViewById(R.id.ok);
+                    AlertDialog.Builder builder = new AlertDialog.Builder(EditorActivity.this);
+                    builder.setView(view);
+                    final AlertDialog alertDialog = builder.create();
+                    cancel.setOnClickListener(v1 -> alertDialog.dismiss());
+                    ok.setOnClickListener(v12 -> {
+                        hours[0] = numberPickerHour.getValue();
+                        mins[0] = numberPickerMinutes.getValue();
+                        secs[0] = numberPickerSeconds.getValue();
+                        duration = "PT" + hours[0] + "H" + mins[0] + "M" + secs[0] + "S";
+                        videoItem.setDuration(duration);
+                        binding.durationTextViewDialog.setText(util.parseDuration(EditorActivity.this, duration));
+                        alertDialog.dismiss();
                     });
-                }
+                    alertDialog.show();
+                });
             }
         });
 
-        View.OnTouchListener mTouchListener = new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View view, MotionEvent motionEvent) {
-                videoHasChanged = true;
-                return false;
-            }
+        View.OnTouchListener mTouchListener = (view, motionEvent) -> {
+            videoHasChanged = true;
+            return false;
         };
         binding.titleEditText.setOnTouchListener(mTouchListener);
         binding.publishedAtTextViewDialog.setOnTouchListener(mTouchListener);
@@ -186,15 +166,12 @@ public class EditorActivity extends AppCompatActivity {
                     return true;
                 }
                 videoItem = editorViewModelDatabase.getVideoItemLiveData().getValue();
-                dataBaseExecutor.execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        videoItem.getSnippet().setTitle(title);
-                        videoItem.getSnippet().setPublishedAt(publishedAt);
-                        videoItem.setDuration(duration);
-                        mDb.videoDao().updateVideo(videoItem);
-                        finish();
-                    }
+                dataBaseExecutor.execute(() -> {
+                    videoItem.getSnippet().setTitle(title);
+                    videoItem.getSnippet().setPublishedAt(publishedAt);
+                    videoItem.setDuration(duration);
+                    mDb.videoDao().updateVideo(videoItem);
+                    finish();
                 });
                 return true;
             case R.id.delete:
@@ -206,12 +183,7 @@ public class EditorActivity extends AppCompatActivity {
                     return true;
                 }
                 DialogInterface.OnClickListener discardButtonClickListener =
-                        new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialogInterface, int i) {
-                                NavUtils.navigateUpFromSameTask(EditorActivity.this);
-                            }
-                        };
+                        (dialogInterface, i) -> NavUtils.navigateUpFromSameTask(EditorActivity.this);
                 showUnsavedChangesDialog(discardButtonClickListener);
                 return true;
             default:
@@ -222,22 +194,13 @@ public class EditorActivity extends AppCompatActivity {
     private void showDeleteConfirmationDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setMessage(R.string.delete_dialog_message);
-        builder.setPositiveButton(R.string.delete, new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int id) {
-                dataBaseExecutor.execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        mDb.videoDao().deleteVideo(editorViewModelDatabase.getVideoItemLiveData().getValue());
-                        finish();
-                    }
-                });
-            }
-        });
-        builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int id) {
-                if (dialog != null) {
-                    dialog.dismiss();
-                }
+        builder.setPositiveButton(R.string.delete, (dialog, id) -> dataBaseExecutor.execute(() -> {
+            mDb.videoDao().deleteVideo(editorViewModelDatabase.getVideoItemLiveData().getValue());
+            finish();
+        }));
+        builder.setNegativeButton(android.R.string.cancel, (dialog, id) -> {
+            if (dialog != null) {
+                dialog.dismiss();
             }
         });
         AlertDialog alertDialog = builder.create();
@@ -251,12 +214,7 @@ public class EditorActivity extends AppCompatActivity {
             return;
         }
         DialogInterface.OnClickListener discardButtonClickListener =
-                new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        finish();
-                    }
-                };
+                (dialogInterface, i) -> finish();
         showUnsavedChangesDialog(discardButtonClickListener);
     }
 
@@ -264,11 +222,9 @@ public class EditorActivity extends AppCompatActivity {
         android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
         builder.setMessage(R.string.unsaved_changes_dialog_msg);
         builder.setPositiveButton(R.string.discard, discardButtonClickListener);
-        builder.setNegativeButton(R.string.keep_editing, new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int id) {
-                if (dialog != null) {
-                    dialog.dismiss();
-                }
+        builder.setNegativeButton(R.string.keep_editing, (dialog, id) -> {
+            if (dialog != null) {
+                dialog.dismiss();
             }
         });
         android.app.AlertDialog alertDialog = builder.create();

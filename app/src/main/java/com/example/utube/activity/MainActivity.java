@@ -1,9 +1,6 @@
 package com.example.utube.activity;
 
-import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProviders;
-import android.arch.paging.PagedList;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
@@ -12,7 +9,6 @@ import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -40,7 +36,6 @@ import com.example.utube.viewmodel.ItemViewModel;
 import com.example.utube.viewmodel.ItemViewModelFactory;
 import com.firebase.ui.auth.AuthUI;
 import com.google.android.gms.tasks.Continuation;
-import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.FirebaseAuth;
@@ -48,7 +43,6 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.storage.FileDownloadTask;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
-import com.google.firebase.storage.UploadTask;
 import com.jakewharton.rxbinding2.widget.RxTextView;
 import com.jakewharton.rxbinding2.widget.TextViewTextChangeEvent;
 
@@ -95,32 +89,29 @@ public class MainActivity extends AppCompatActivity {
         FirebaseApp firebaseApp = FirebaseApp.initializeApp(this);
         Log.e(TAG, "onCreate: firebaseApp " + firebaseApp);
         firebaseAuth = FirebaseAuth.getInstance();
-        firebaseAuthStateListener = new FirebaseAuth.AuthStateListener() {
-            @Override
-            public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
-                FirebaseUser user = firebaseAuth.getCurrentUser();
-                List<AuthUI.IdpConfig> providers = Arrays.asList(
-                        new AuthUI.IdpConfig.EmailBuilder().build(),
-                        new AuthUI.IdpConfig.GoogleBuilder().build());
-                if (user != null) {
-                    // User is signed in
-                    Log.e("zzzzz", "There is a user " + user);
-                    userName = user.getDisplayName();
-                } else {
-                    // User is signed out
-                    Log.e("zzzzz", "There is no user null");
-                    userName = ANONYMOUS;
-                    startActivityForResult(
-                            AuthUI.getInstance()
-                                    .createSignInIntentBuilder()
-                                    .setIsSmartLockEnabled(false)
-                                    .setAvailableProviders(providers)
-                                    .build(),
-                            RC_SIGN_IN);
-                }
-                firebaseStorage = FirebaseStorage.getInstance();
-                videoStorageReference = firebaseStorage.getReference().child(userName).child("videos.db");
+        firebaseAuthStateListener = firebaseAuth -> {
+            FirebaseUser user = firebaseAuth.getCurrentUser();
+            List<AuthUI.IdpConfig> providers = Arrays.asList(
+                    new AuthUI.IdpConfig.EmailBuilder().build(),
+                    new AuthUI.IdpConfig.GoogleBuilder().build());
+            if (user != null) {
+                // User is signed in
+                Log.e("zzzzz", "There is a user " + user);
+                userName = user.getDisplayName();
+            } else {
+                // User is signed out
+                Log.e("zzzzz", "There is no user null");
+                userName = ANONYMOUS;
+                startActivityForResult(
+                        AuthUI.getInstance()
+                                .createSignInIntentBuilder()
+                                .setIsSmartLockEnabled(false)
+                                .setAvailableProviders(providers)
+                                .build(),
+                        RC_SIGN_IN);
             }
+            firebaseStorage = FirebaseStorage.getInstance();
+            videoStorageReference = firebaseStorage.getReference().child(userName).child("videos.db");
         };
         String databasePath = getDatabasePath(DATABASE_NAME).getAbsolutePath();
         Log.e(TAG, "onCreate: databasePath " + databasePath);
@@ -138,88 +129,69 @@ public class MainActivity extends AppCompatActivity {
 
         util.checkNetworkConnection(this);
         addWinkToEmptyListTextView();
-        dataBaseExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                Log.e(TAG, "onCreate: mDb.videoDao().getAllVideos().size() " + mDb.videoDao().getAllVideos().size());
-                if (mDb.videoDao().getAllVideos().size() != 0) {
-                    ItemViewModelFactory itemViewModelFactory = new ItemViewModelFactory(getApplication(), query);
-                    itemViewModel = ViewModelProviders.of(MainActivity.this, itemViewModelFactory).get(ItemViewModel.class);
-                    getVideosFromDatabase(itemViewModel);
-                }
+        dataBaseExecutor.execute(() -> {
+            Log.e(TAG, "onCreate: mDb.videoDao().getAllVideos().size() " + mDb.videoDao().getAllVideos().size());
+            if (mDb.videoDao().getAllVideos().size() != 0) {
+                ItemViewModelFactory itemViewModelFactory = new ItemViewModelFactory(getApplication(), query);
+                itemViewModel = ViewModelProviders.of(MainActivity.this, itemViewModelFactory).get(ItemViewModel.class);
+                getVideosFromDatabase(itemViewModel);
             }
         });
 
-        binding.searchEditText.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                prepareLoadingVideosFromDatabase();
-            }
-        });
+        binding.searchEditText.setOnClickListener(v -> prepareLoadingVideosFromDatabase());
 
         ItemClickSupport.addTo(binding.recyclerView)
-                .setOnItemClickListener(new ItemClickSupport.OnItemClickListener() {
-                    @Override
-                    public void onItemClicked(RecyclerView recyclerView, int position, View v) {
-                        if (adapter.getCurrentList() != null) {
-                            Videos.Item item = adapter.getCurrentList().get(position);
-                            if (item != null) {
-                                String videoId = item.getId().getVideoId();
-                                Intent intent = new Intent(MainActivity.this, PlayerActivity.class);
-                                Bundle bundle = new Bundle();
-                                bundle.putString("videoId", videoId);
-                                intent.putExtras(bundle);
-                                startActivity(intent);
-                            }
+                .setOnItemClickListener((recyclerView, position, v) -> {
+                    if (adapter.getCurrentList() != null) {
+                        Videos.Item item = adapter.getCurrentList().get(position);
+                        if (item != null) {
+                            String videoId = item.getId().getVideoId();
+                            Intent intent = new Intent(MainActivity.this, PlayerActivity.class);
+                            Bundle bundle = new Bundle();
+                            bundle.putString("videoId", videoId);
+                            intent.putExtras(bundle);
+                            startActivity(intent);
                         }
                     }
                 })
                 .setOnItemLongClickListener(
-                        new ItemClickSupport.OnItemLongClickListener() {
-                            @Override
-                            public boolean onItemLongClicked(final RecyclerView recyclerView, final int position, final View v) {
-                                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                                View.inflate(MainActivity.this, R.layout.dialog, null);
-                                CharSequence[] dialogButtons = new CharSequence[]{
-                                        getString(R.string.update),
-                                        getString(R.string.delete),
-                                        getString(android.R.string.cancel)};
-                                builder.setItems(dialogButtons,
-                                        new DialogInterface.OnClickListener() {
-                                            public void onClick(DialogInterface dialog, int which) {
-                                                switch (which) {
-                                                    case 0:
-                                                        Intent editorIntent = new Intent(MainActivity.this, EditorActivity.class);
-                                                        editorIntent.putExtra("idPrimaryKey", (int) v.getTag());
-                                                        startActivity(editorIntent);
-                                                        break;
-                                                    case 1:
-                                                        dataBaseExecutor.execute(new Runnable() {
-                                                            @Override
-                                                            public void run() {
-                                                                Log.e(TAG, "case 1 position " + position);
-                                                                if (adapter.getCurrentList() != null) {
-                                                                    int sizeBefore = mDb.videoDao().getAllVideos().size();
-                                                                    Log.e(TAG, "case 1 sizeBefore " + sizeBefore);
-                                                                    Videos.Item item = adapter.getCurrentList().get(position);
-                                                                    if (item != null) {
-                                                                        Log.e(TAG, "case 1 item.getIdPrimaryKey() " + item.getIdPrimaryKey() + " " + item.getSnippet().getTitle());
-                                                                        mDb.videoDao().deleteVideo(item);
-                                                                    }
-                                                                    int sizeAfter = mDb.videoDao().getAllVideos().size();
-                                                                    Log.e(TAG, "case 1 sizeAfter " + sizeAfter);
-                                                                }
-                                                            }
-                                                        });
-                                                        break;
-                                                    case 2:
-                                                        break;
-                                                }
-                                            }
-                                        });
-                                builder.create().show();
-                                return true;
-                            }
+                        (recyclerView, position, v) -> {
+                            AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                            View.inflate(MainActivity.this, R.layout.dialog, null);
+                            CharSequence[] dialogButtons = new CharSequence[]{
+                                    getString(R.string.update),
+                                    getString(R.string.delete),
+                                    getString(android.R.string.cancel)};
+                            builder.setItems(dialogButtons,
+                                    (dialog, which) -> {
+                                        switch (which) {
+                                            case 0:
+                                                Intent editorIntent = new Intent(MainActivity.this, EditorActivity.class);
+                                                editorIntent.putExtra("idPrimaryKey", (int) v.getTag());
+                                                startActivity(editorIntent);
+                                                break;
+                                            case 1:
+                                                dataBaseExecutor.execute(() -> {
+                                                    Log.e(TAG, "case 1 position " + position);
+                                                    if (adapter.getCurrentList() != null) {
+                                                        int sizeBefore = mDb.videoDao().getAllVideos().size();
+                                                        Log.e(TAG, "case 1 sizeBefore " + sizeBefore);
+                                                        Videos.Item item = adapter.getCurrentList().get(position);
+                                                        if (item != null) {
+                                                            Log.e(TAG, "case 1 item.getIdPrimaryKey() " + item.getIdPrimaryKey() + " " + item.getSnippet().getTitle());
+                                                            mDb.videoDao().deleteVideo(item);
+                                                        }
+                                                        int sizeAfter = mDb.videoDao().getAllVideos().size();
+                                                        Log.e(TAG, "case 1 sizeAfter " + sizeAfter);
+                                                    }
+                                                });
+                                                break;
+                                            case 2:
+                                                break;
+                                        }
+                                    });
+                            builder.create().show();
+                            return true;
                         });
 
         new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
@@ -230,22 +202,19 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onSwiped(@NonNull final RecyclerView.ViewHolder viewHolder, int swipeDir) {
-                dataBaseExecutor.execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        int position = viewHolder.getAdapterPosition();
-                        Log.e(TAG, "onSwiped position " + position);
-                        if (adapter.getCurrentList() != null) {
-                            int sizeBefore = mDb.videoDao().getAllVideos().size();
-                            Log.e(TAG, "onSwiped sizeBefore " + sizeBefore);
-                            Videos.Item item = adapter.getCurrentList().get(position);
-                            if (item != null) {
-                                Log.e(TAG, "onSwiped item.getIdPrimaryKey() " + item.getIdPrimaryKey() + " " + item.getSnippet().getTitle());
-                                mDb.videoDao().deleteVideo(item);
-                            }
-                            int sizeAfter = mDb.videoDao().getAllVideos().size();
-                            Log.e(TAG, "onSwiped sizeAfter " + sizeAfter);
+                dataBaseExecutor.execute(() -> {
+                    int position = viewHolder.getAdapterPosition();
+                    Log.e(TAG, "onSwiped position " + position);
+                    if (adapter.getCurrentList() != null) {
+                        int sizeBefore = mDb.videoDao().getAllVideos().size();
+                        Log.e(TAG, "onSwiped sizeBefore " + sizeBefore);
+                        Videos.Item item = adapter.getCurrentList().get(position);
+                        if (item != null) {
+                            Log.e(TAG, "onSwiped item.getIdPrimaryKey() " + item.getIdPrimaryKey() + " " + item.getSnippet().getTitle());
+                            mDb.videoDao().deleteVideo(item);
                         }
+                        int sizeAfter = mDb.videoDao().getAllVideos().size();
+                        Log.e(TAG, "onSwiped sizeAfter " + sizeAfter);
                     }
                 });
             }
@@ -258,16 +227,13 @@ public class MainActivity extends AppCompatActivity {
         disposable.add(RxTextView.textChangeEvents(binding.searchEditText)
                 .skipInitialValue()
                 .debounce(1000, TimeUnit.MILLISECONDS)
-                .switchMap(new Function<TextViewTextChangeEvent, ObservableSource<TextViewTextChangeEvent>>() {
-                    @Override
-                    public Observable<TextViewTextChangeEvent> apply(TextViewTextChangeEvent textViewTextChangeEvent) {
-                        Log.e(TAG, "apply: textViewTextChangeEvent " + textViewTextChangeEvent.text().toString());
-                        SharedPreferences.Editor editor = sharedPreferences.edit();
-                        editor.putString("query", textViewTextChangeEvent.text().toString());
-                        editor.putString("nextPageToken", "");
-                        editor.apply();
-                        return Observable.just(textViewTextChangeEvent);
-                    }
+                .switchMap((Function<TextViewTextChangeEvent, ObservableSource<TextViewTextChangeEvent>>) textViewTextChangeEvent -> {
+                    Log.e(TAG, "apply: textViewTextChangeEvent " + textViewTextChangeEvent.text().toString());
+                    SharedPreferences.Editor editor = sharedPreferences.edit();
+                    editor.putString("query", textViewTextChangeEvent.text().toString());
+                    editor.putString("nextPageToken", "");
+                    editor.apply();
+                    return Observable.just(textViewTextChangeEvent);
                 })
                 .subscribeWith(new DisposableObserver<TextViewTextChangeEvent>() {
                     @Override
@@ -322,57 +288,48 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void getVideosFromDatabase(ItemViewModel itemViewModel) {
-        dataBaseExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                List<Videos.Item> items = mDb.videoDao().getAllVideos();
-                Log.e(TAG, "getVideosFromDatabase: items.size() " + items.size());
-                for (Videos.Item item : items) {
-                    Log.e(TAG, "getVideosFromDatabase: item.getIdPrimaryKey() " + item.getIdPrimaryKey() + " " + item.getSnippet().getTitle());
-                }
+        dataBaseExecutor.execute(() -> {
+            List<Videos.Item> items = mDb.videoDao().getAllVideos();
+            Log.e(TAG, "getVideosFromDatabase: items.size() " + items.size());
+            for (Videos.Item item : items) {
+                Log.e(TAG, "getVideosFromDatabase: item.getIdPrimaryKey() " + item.getIdPrimaryKey() + " " + item.getSnippet().getTitle());
             }
         });
-        itemViewModel.getDatabasePagedList().observe(MainActivity.this, new Observer<PagedList<Videos.Item>>() {
-            @Override
-            public void onChanged(@Nullable PagedList<Videos.Item> items) {
-                Log.e(TAG, "getVideosFromDatabase onChanged: getDatabasePagedList ");
-                if (items != null) {
-                    Log.e(TAG, "Updating list of video items from LiveData in ViewModel");
-                    Log.e(TAG, "getVideosFromDatabase onChanged: items.size() " + items.size());
-                    int nullItem = 0;
-                    for (Videos.Item item : items) {
-                        if (item != null) {
-                            Log.e(TAG, "getVideosFromDatabase onChanged: item.getIdPrimaryKey() " + item.getIdPrimaryKey() + " " + item.getSnippet().getTitle());
-                        } else {
-                            nullItem++;
-                            Log.e(TAG, "getVideosFromDatabase onChanged: null item " + nullItem);
-                        }
-                    }
-                    Log.e(TAG, "getVideosFromDatabase onChanged: Before adapter.submitList: adapter.getItemCount() " + adapter.getItemCount());
-                    Log.e(TAG, "getVideosFromDatabase onChanged: Before adapter.submitList: adapter.getCurrentList() " + adapter.getCurrentList());
-                    adapter.submitList(items);
-                    Log.e(TAG, "getVideosFromDatabase onChanged: After adapter.submitList: adapter.getItemCount() " + adapter.getItemCount());
-                    Log.e(TAG, "getVideosFromDatabase onChanged: After adapter.submitList: adapter.getCurrentList() " + adapter.getCurrentList());
-                    if (items.size() == 0) {
-                        binding.emptyList.setVisibility(View.VISIBLE);
-                        Log.e(TAG, "getVideosFromDatabase onChanged: binding.emptyList.setVisibility(View.VISIBLE)");
+        itemViewModel.getDatabasePagedList().observe(MainActivity.this, items -> {
+            Log.e(TAG, "getVideosFromDatabase onChanged: getDatabasePagedList ");
+            if (items != null) {
+                Log.e(TAG, "Updating list of video items from LiveData in ViewModel");
+                Log.e(TAG, "getVideosFromDatabase onChanged: items.size() " + items.size());
+                int nullItem = 0;
+                for (Videos.Item item : items) {
+                    if (item != null) {
+                        Log.e(TAG, "getVideosFromDatabase onChanged: item.getIdPrimaryKey() " + item.getIdPrimaryKey() + " " + item.getSnippet().getTitle());
                     } else {
-                        binding.emptyList.setVisibility(View.GONE);
-                        Log.e(TAG, "getVideosFromDatabase onChanged: binding.emptyList.setVisibility(View.GONE)");
+                        nullItem++;
+                        Log.e(TAG, "getVideosFromDatabase onChanged: null item " + nullItem);
                     }
+                }
+                Log.e(TAG, "getVideosFromDatabase onChanged: Before adapter.submitList: adapter.getItemCount() " + adapter.getItemCount());
+                Log.e(TAG, "getVideosFromDatabase onChanged: Before adapter.submitList: adapter.getCurrentList() " + adapter.getCurrentList());
+                adapter.submitList(items);
+                Log.e(TAG, "getVideosFromDatabase onChanged: After adapter.submitList: adapter.getItemCount() " + adapter.getItemCount());
+                Log.e(TAG, "getVideosFromDatabase onChanged: After adapter.submitList: adapter.getCurrentList() " + adapter.getCurrentList());
+                if (items.size() == 0) {
+                    binding.emptyList.setVisibility(View.VISIBLE);
+                    Log.e(TAG, "getVideosFromDatabase onChanged: binding.emptyList.setVisibility(View.VISIBLE)");
+                } else {
+                    binding.emptyList.setVisibility(View.GONE);
+                    Log.e(TAG, "getVideosFromDatabase onChanged: binding.emptyList.setVisibility(View.GONE)");
                 }
             }
         });
     }
 
     private void addWinkToEmptyListTextView() {
-        Html.ImageGetter imageGetter = new Html.ImageGetter() {
-            @Override
-            public Drawable getDrawable(String source) {
-                Drawable drawable = getResources().getDrawable(R.drawable.ic_wink);
-                drawable.setBounds(0, -5, drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight());
-                return drawable;
-            }
+        Html.ImageGetter imageGetter = source -> {
+            Drawable drawable = getResources().getDrawable(R.drawable.ic_wink);
+            drawable.setBounds(0, -5, drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight());
+            return drawable;
         };
         Spanned spanned = Html.fromHtml(
                 getString(R.string.empty_list) + " <img src='" + getResources().getDrawable(R.drawable.ic_wink) + "'/>",
@@ -383,43 +340,34 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void uploadDatabaseToFirebase() {
-        videoStorageReference.putFile(databaseUri).continueWithTask(new Continuation<UploadTask.TaskSnapshot, Task<Uri>>() {
-            @Override
-            public Task<Uri> then(@NonNull Task<UploadTask.TaskSnapshot> task) throws Exception {
-                Log.e(TAG, "uploadDatabaseToFirebase then: task.isSuccessful() " + task.isSuccessful());
-                if (!task.isSuccessful() && task.getException() != null) {
-                    Log.e(TAG, "uploadDatabaseToFirebase then: task.getException() " + task.getException());
-                    throw task.getException();
-                }
-                return videoStorageReference.getDownloadUrl();
+        videoStorageReference.putFile(databaseUri).continueWithTask(task -> {
+            Log.e(TAG, "uploadDatabaseToFirebase then: task.isSuccessful() " + task.isSuccessful());
+            if (!task.isSuccessful() && task.getException() != null) {
+                Log.e(TAG, "uploadDatabaseToFirebase then: task.getException() " + task.getException());
+                throw task.getException();
             }
-        }).addOnCompleteListener(new OnCompleteListener<Uri>() {
-            @Override
-            public void onComplete(@NonNull Task<Uri> task) {
-                Log.e(TAG, "uploadDatabaseToFirebase onComplete: task.isSuccessful() " + task.isSuccessful());
-                if (task.isSuccessful()) {
-                    Uri downloadUri = task.getResult();
-                    Log.e(TAG, "uploadDatabaseToFirebase onComplete: downloadUri " + downloadUri);
-                    Toast.makeText(getApplicationContext(), "Upload completed successfully", Toast.LENGTH_SHORT).show();
-                }
+            return videoStorageReference.getDownloadUrl();
+        }).addOnCompleteListener(task -> {
+            Log.e(TAG, "uploadDatabaseToFirebase onComplete: task.isSuccessful() " + task.isSuccessful());
+            if (task.isSuccessful()) {
+                Uri downloadUri = task.getResult();
+                Log.e(TAG, "uploadDatabaseToFirebase onComplete: downloadUri " + downloadUri);
+                Toast.makeText(getApplicationContext(), "Upload completed successfully", Toast.LENGTH_SHORT).show();
             }
         });
     }
 
     private void downloadDatabaseFromFirebase() {
-        videoStorageReference.getFile(databaseUri).continueWithTask(new Continuation<FileDownloadTask.TaskSnapshot, Task<Uri>>() {
-            @Override
-            public Task<Uri> then(@NonNull Task<FileDownloadTask.TaskSnapshot> task) throws Exception {
-                Log.e(TAG, "downloadDatabaseFromFirebase then: task.isSuccessful() " + task.isSuccessful());
-                if (!task.isSuccessful() && task.getException() != null) {
-                    Log.e(TAG, "downloadDatabaseFromFirebase then: task.getException() " + task.getException());
-                    throw task.getException();
-                }
-                Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-                startActivity(intent);
-                System.exit(0);
-                return null;
+        videoStorageReference.getFile(databaseUri).continueWithTask((Continuation<FileDownloadTask.TaskSnapshot, Task<Uri>>) task -> {
+            Log.e(TAG, "downloadDatabaseFromFirebase then: task.isSuccessful() " + task.isSuccessful());
+            if (!task.isSuccessful() && task.getException() != null) {
+                Log.e(TAG, "downloadDatabaseFromFirebase then: task.getException() " + task.getException());
+                throw task.getException();
             }
+            Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+            startActivity(intent);
+            System.exit(0);
+            return null;
         });
     }
 
@@ -445,15 +393,12 @@ public class MainActivity extends AppCompatActivity {
                 downloadDatabaseFromFirebase();
                 break;
             case R.id.clear_database:
-                dataBaseExecutor.execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        int sizeBefore = mDb.videoDao().getAllVideos().size();
-                        Log.e(TAG, "mDb.clearAllTables(): sizeBefore " + sizeBefore);
-                        mDb.clearAllTables();
-                        int sizeAfter = mDb.videoDao().getAllVideos().size();
-                        Log.e(TAG, "mDb.clearAllTables(): sizeAfter " + sizeAfter);
-                    }
+                dataBaseExecutor.execute(() -> {
+                    int sizeBefore = mDb.videoDao().getAllVideos().size();
+                    Log.e(TAG, "mDb.clearAllTables(): sizeBefore " + sizeBefore);
+                    mDb.clearAllTables();
+                    int sizeAfter = mDb.videoDao().getAllVideos().size();
+                    Log.e(TAG, "mDb.clearAllTables(): sizeAfter " + sizeAfter);
                 });
                 break;
             case R.id.sign_out:
