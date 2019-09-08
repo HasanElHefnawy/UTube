@@ -29,6 +29,7 @@ public class PlayerActivity extends AppCompatActivity implements Player.EventLis
     private static final String TAG = "zzzzz PlayerActivity";
     private SimpleExoPlayer exoPlayer;
     private PlayerView playerView;
+    private long videoCurrentPosition;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,10 +64,19 @@ public class PlayerActivity extends AppCompatActivity implements Player.EventLis
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        if (exoPlayer != null) {
+            exoPlayer.seekTo(0, videoCurrentPosition);
+        }
+    }
+
+    @Override
     protected void onPause() {
         super.onPause();
         if (exoPlayer != null) {
             exoPlayer.setPlayWhenReady(false);
+            videoCurrentPosition = exoPlayer.getCurrentPosition();
         }
     }
 
