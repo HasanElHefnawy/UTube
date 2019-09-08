@@ -13,6 +13,14 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity
+            android:name=".activity.PlayerActivity"
+            android:configChanges="orientation|screenSize"
+            android:parentActivityName=".activity.MainActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.example.utube.activity.MainActivity" />
+        </activity>
+        <activity
             android:name=".activity.EditorActivity"
             android:parentActivityName=".activity.MainActivity">
             <meta-data

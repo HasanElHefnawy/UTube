@@ -157,53 +157,70 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        ItemClickSupport.addTo(binding.recyclerView).setOnItemLongClickListener(
-                new ItemClickSupport.OnItemLongClickListener() {
+        ItemClickSupport.addTo(binding.recyclerView)
+                .setOnItemClickListener(new ItemClickSupport.OnItemClickListener() {
                     @Override
-                    public boolean onItemLongClicked(final RecyclerView recyclerView, final int position, final View v) {
-                        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                        View.inflate(MainActivity.this, R.layout.dialog, null);
-                        CharSequence[] dialogButtons = new CharSequence[]{
-                                getString(R.string.update),
-                                getString(R.string.delete),
-                                getString(android.R.string.cancel)};
-                        builder.setItems(dialogButtons,
-                                new DialogInterface.OnClickListener() {
-                                    public void onClick(DialogInterface dialog, int which) {
-                                        switch (which) {
-                                            case 0:
-                                                Intent editorIntent = new Intent(MainActivity.this, EditorActivity.class);
-                                                editorIntent.putExtra("idPrimaryKey", (int) v.getTag());
-                                                startActivity(editorIntent);
-                                                break;
-                                            case 1:
-                                                dataBaseExecutor.execute(new Runnable() {
-                                                    @Override
-                                                    public void run() {
-                                                        Log.e(TAG, "case 1 position " + position);
-                                                        if (adapter.getCurrentList() != null) {
-                                                            int sizeBefore = mDb.videoDao().getAllVideos().size();
-                                                            Log.e(TAG, "case 1 sizeBefore " + sizeBefore);
-                                                            final Videos.Item item = adapter.getCurrentList().get(position);
-                                                            if (item != null) {
-                                                                Log.e(TAG, "case 1 item.getIdPrimaryKey() " + item.getIdPrimaryKey() + " " + item.getSnippet().getTitle());
-                                                                mDb.videoDao().deleteVideo(item);
-                                                            }
-                                                            int sizeAfter = mDb.videoDao().getAllVideos().size();
-                                                            Log.e(TAG, "case 1 sizeAfter " + sizeAfter);
-                                                        }
-                                                    }
-                                                });
-                                                break;
-                                            case 2:
-                                                break;
-                                        }
-                                    }
-                                });
-                        builder.create().show();
-                        return true;
+                    public void onItemClicked(RecyclerView recyclerView, int position, View v) {
+                        if (adapter.getCurrentList() != null) {
+                            Videos.Item item = adapter.getCurrentList().get(position);
+                            if (item != null) {
+                                String videoId = item.getId().getVideoId();
+                                Intent intent = new Intent(MainActivity.this, PlayerActivity.class);
+                                Bundle bundle = new Bundle();
+                                bundle.putString("videoId", videoId);
+                                intent.putExtras(bundle);
+                                startActivity(intent);
+                            }
+                        }
                     }
-                });
+                })
+                .setOnItemLongClickListener(
+                        new ItemClickSupport.OnItemLongClickListener() {
+                            @Override
+                            public boolean onItemLongClicked(final RecyclerView recyclerView, final int position, final View v) {
+                                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                                View.inflate(MainActivity.this, R.layout.dialog, null);
+                                CharSequence[] dialogButtons = new CharSequence[]{
+                                        getString(R.string.update),
+                                        getString(R.string.delete),
+                                        getString(android.R.string.cancel)};
+                                builder.setItems(dialogButtons,
+                                        new DialogInterface.OnClickListener() {
+                                            public void onClick(DialogInterface dialog, int which) {
+                                                switch (which) {
+                                                    case 0:
+                                                        Intent editorIntent = new Intent(MainActivity.this, EditorActivity.class);
+                                                        editorIntent.putExtra("idPrimaryKey", (int) v.getTag());
+                                                        startActivity(editorIntent);
+                                                        break;
+                                                    case 1:
+                                                        dataBaseExecutor.execute(new Runnable() {
+                                                            @Override
+                                                            public void run() {
+                                                                Log.e(TAG, "case 1 position " + position);
+                                                                if (adapter.getCurrentList() != null) {
+                                                                    int sizeBefore = mDb.videoDao().getAllVideos().size();
+                                                                    Log.e(TAG, "case 1 sizeBefore " + sizeBefore);
+                                                                    Videos.Item item = adapter.getCurrentList().get(position);
+                                                                    if (item != null) {
+                                                                        Log.e(TAG, "case 1 item.getIdPrimaryKey() " + item.getIdPrimaryKey() + " " + item.getSnippet().getTitle());
+                                                                        mDb.videoDao().deleteVideo(item);
+                                                                    }
+                                                                    int sizeAfter = mDb.videoDao().getAllVideos().size();
+                                                                    Log.e(TAG, "case 1 sizeAfter " + sizeAfter);
+                                                                }
+                                                            }
+                                                        });
+                                                        break;
+                                                    case 2:
+                                                        break;
+                                                }
+                                            }
+                                        });
+                                builder.create().show();
+                                return true;
+                            }
+                        });
 
         new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
             @Override
@@ -216,12 +233,12 @@ public class MainActivity extends AppCompatActivity {
                 dataBaseExecutor.execute(new Runnable() {
                     @Override
                     public void run() {
-                        final int position = viewHolder.getAdapterPosition();
+                        int position = viewHolder.getAdapterPosition();
                         Log.e(TAG, "onSwiped position " + position);
                         if (adapter.getCurrentList() != null) {
                             int sizeBefore = mDb.videoDao().getAllVideos().size();
                             Log.e(TAG, "onSwiped sizeBefore " + sizeBefore);
-                            final Videos.Item item = adapter.getCurrentList().get(position);
+                            Videos.Item item = adapter.getCurrentList().get(position);
                             if (item != null) {
                                 Log.e(TAG, "onSwiped item.getIdPrimaryKey() " + item.getIdPrimaryKey() + " " + item.getSnippet().getTitle());
                                 mDb.videoDao().deleteVideo(item);
