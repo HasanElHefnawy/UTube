@@ -38,10 +38,13 @@ import com.example.utube.model.Videos;
 import com.example.utube.util;
 import com.example.utube.viewmodel.ItemViewModel;
 import com.example.utube.viewmodel.ItemViewModelFactory;
+import com.firebase.ui.auth.AuthUI;
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.storage.FileDownloadTask;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
@@ -50,6 +53,7 @@ import com.jakewharton.rxbinding2.widget.RxTextView;
 import com.jakewharton.rxbinding2.widget.TextViewTextChangeEvent;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -71,6 +75,12 @@ public class MainActivity extends AppCompatActivity {
     private AppDatabase mDb;
     private SharedPreferences sharedPreferences;
     private ItemViewModel itemViewModel;
+    private FirebaseAuth firebaseAuth;
+    private FirebaseAuth.AuthStateListener firebaseAuthStateListener;
+    private String userName;
+    public static final String ANONYMOUS = "anonymous";
+    public static final int RC_SIGN_IN = 1;
+    private FirebaseStorage firebaseStorage;
     private StorageReference videoStorageReference;
     private Uri databaseUri;
 
@@ -84,8 +94,34 @@ public class MainActivity extends AppCompatActivity {
 
         FirebaseApp firebaseApp = FirebaseApp.initializeApp(this);
         Log.e(TAG, "onCreate: firebaseApp " + firebaseApp);
-        FirebaseStorage firebaseStorage = FirebaseStorage.getInstance();
-        videoStorageReference = firebaseStorage.getReference().child("videos.db");
+        firebaseAuth = FirebaseAuth.getInstance();
+        firebaseAuthStateListener = new FirebaseAuth.AuthStateListener() {
+            @Override
+            public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
+                FirebaseUser user = firebaseAuth.getCurrentUser();
+                List<AuthUI.IdpConfig> providers = Arrays.asList(
+                        new AuthUI.IdpConfig.EmailBuilder().build(),
+                        new AuthUI.IdpConfig.GoogleBuilder().build());
+                if (user != null) {
+                    // User is signed in
+                    Log.e("zzzzz", "There is a user " + user);
+                    userName = user.getDisplayName();
+                } else {
+                    // User is signed out
+                    Log.e("zzzzz", "There is no user null");
+                    userName = ANONYMOUS;
+                    startActivityForResult(
+                            AuthUI.getInstance()
+                                    .createSignInIntentBuilder()
+                                    .setIsSmartLockEnabled(false)
+                                    .setAvailableProviders(providers)
+                                    .build(),
+                            RC_SIGN_IN);
+                }
+                firebaseStorage = FirebaseStorage.getInstance();
+                videoStorageReference = firebaseStorage.getReference().child(userName).child("videos.db");
+            }
+        };
         String databasePath = getDatabasePath(DATABASE_NAME).getAbsolutePath();
         Log.e(TAG, "onCreate: databasePath " + databasePath);
         databaseUri = Uri.fromFile(new File(databasePath));
@@ -241,6 +277,33 @@ public class MainActivity extends AppCompatActivity {
                 }));
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        firebaseAuth.addAuthStateListener(firebaseAuthStateListener);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (firebaseAuth != null) {
+            firebaseAuth.removeAuthStateListener(firebaseAuthStateListener);
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == RC_SIGN_IN) {
+            if (resultCode == RESULT_OK) {
+                Toast.makeText(MainActivity.this, "Signed in!", Toast.LENGTH_SHORT).show();
+            } else if (resultCode == RESULT_CANCELED) {
+                Toast.makeText(MainActivity.this, "Sign in cancelled", Toast.LENGTH_SHORT).show();
+                finish();
+            }
+        }
+    }
+
     private void getVideosFromDatabase(ItemViewModel itemViewModel) {
         dataBaseExecutor.execute(new Runnable() {
             @Override
@@ -376,6 +439,9 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
                 break;
+            case R.id.sign_out:
+                AuthUI.getInstance().signOut(this);
+                return true;
         }
         return super.onOptionsItemSelected(item);
     }
