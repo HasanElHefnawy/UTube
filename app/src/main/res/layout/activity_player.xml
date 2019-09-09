@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:keepScreenOn="true"
-    tools:context=".activity.PlayerActivity">
+    tools:context=".ui.PlayerActivity">
 
     <FrameLayout
         android:id="@+id/container"

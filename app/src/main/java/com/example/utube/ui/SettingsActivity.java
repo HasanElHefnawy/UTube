@@ -1,4 +1,4 @@
-package com.example.utube.activity;
+package com.example.utube.ui;
 
 import android.content.SharedPreferences;
 import android.preference.ListPreference;

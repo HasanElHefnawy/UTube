@@ -1,4 +1,4 @@
-package com.example.utube;
+package com.example.utube.ui;
 
 import android.arch.paging.PagedListAdapter;
 import android.content.Context;
@@ -10,14 +10,17 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
+import com.example.utube.GlideApp;
+import com.example.utube.R;
 import com.example.utube.databinding.VideoItemBinding;
 import com.example.utube.model.Videos;
+import com.example.utube.util;
 
 public class VideoAdapter extends PagedListAdapter<Videos.Item, VideoAdapter.ViewHolder> {
     private static final String TAG = "zzzzz VideoAdapter";
     private Context context;
 
-    public VideoAdapter(Context context) {
+    VideoAdapter(Context context) {
         super(DIFF_CALLBACK);
         this.context = context;
     }

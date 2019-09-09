@@ -1,4 +1,4 @@
-package com.example.utube.activity;
+package com.example.utube.ui;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;

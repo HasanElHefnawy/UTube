@@ -7,7 +7,7 @@
 
     <fragment
         android:id="@+id/fragment"
-        android:name="com.example.utube.activity.MainFragment"
+        android:name="com.example.utube.ui.MainFragment"
         android:layout_width="0dp"
         android:layout_height="match_parent"
         app:layout_constraintEnd_toEndOf="@id/guideline"

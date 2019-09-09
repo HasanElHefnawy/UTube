@@ -13,29 +13,29 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity
-            android:name=".activity.PlayerActivity"
+            android:name=".ui.PlayerActivity"
             android:configChanges="orientation|screenSize"
-            android:parentActivityName=".activity.MainActivity">
+            android:parentActivityName=".ui.MainActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.example.utube.activity.MainActivity" />
+                android:value="com.example.utube.ui.MainActivity" />
         </activity>
         <activity
-            android:name=".activity.EditorActivity"
-            android:parentActivityName=".activity.MainActivity">
+            android:name=".ui.EditorActivity"
+            android:parentActivityName=".ui.MainActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.example.utube.activity.MainActivity" />
+                android:value="com.example.utube.ui.MainActivity" />
         </activity>
         <activity
-            android:name=".activity.SettingsActivity"
-            android:parentActivityName=".activity.MainActivity">
+            android:name=".ui.SettingsActivity"
+            android:parentActivityName=".ui.MainActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.example.utube.activity.MainActivity" />
+                android:value="com.example.utube.ui.MainActivity" />
         </activity>
         <activity
-            android:name=".activity.MainActivity"
+            android:name=".ui.MainActivity"
             android:windowSoftInputMode="stateAlwaysHidden">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

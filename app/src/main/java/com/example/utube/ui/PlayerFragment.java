@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.example.utube.activity;
+package com.example.utube.ui;
 
 import android.net.Uri;
 import android.os.Bundle;

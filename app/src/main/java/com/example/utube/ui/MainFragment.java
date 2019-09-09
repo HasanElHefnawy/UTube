@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.example.utube.activity;
+package com.example.utube.ui;
 
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
@@ -46,7 +46,6 @@ import android.widget.Toast;
 import com.example.utube.AppExecutor;
 import com.example.utube.ItemClickSupport;
 import com.example.utube.R;
-import com.example.utube.VideoAdapter;
 import com.example.utube.database.AppDatabase;
 import com.example.utube.databinding.FragmentMainBinding;
 import com.example.utube.model.Videos;

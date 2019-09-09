@@ -1,4 +1,4 @@
-package com.example.utube.activity;
+package com.example.utube.ui;
 
 import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;

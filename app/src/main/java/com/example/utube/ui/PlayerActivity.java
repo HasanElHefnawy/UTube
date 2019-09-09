@@ -1,4 +1,4 @@
-package com.example.utube.activity;
+package com.example.utube.ui;
 
 import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
