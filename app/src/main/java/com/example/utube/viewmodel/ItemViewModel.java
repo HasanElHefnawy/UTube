@@ -45,6 +45,13 @@ public class ItemViewModel extends ViewModel {
     private RetrofitApiService retrofitApiService = RetrofitApiClient.getClient().create(RetrofitApiService.class);
     private String nextPageToken;
     private boolean isRequestInProgress = false;
+    private BoundaryCallbackListener boundaryCallbackListener;
+
+    public interface BoundaryCallbackListener {
+        void onItemAtEndLoaded();
+
+        void onLoadingNewItemsCompleted();
+    }
 
     public ItemViewModel(Application application, String query) {
         Log.e(TAG, "ItemViewModel: ");
@@ -70,6 +77,7 @@ public class ItemViewModel extends ViewModel {
             public void onItemAtEndLoaded(@NonNull Videos.Item itemAtEnd) {
                 Log.e(TAG, "onItemAtEndLoaded: ");
                 super.onItemAtEndLoaded(itemAtEnd);
+                boundaryCallbackListener.onItemAtEndLoaded();
                 fetchVideosFromInternetAndStoreInDatabase();
             }
 
@@ -177,6 +185,7 @@ public class ItemViewModel extends ViewModel {
                         }
                     }
                 }
+                boundaryCallbackListener.onLoadingNewItemsCompleted();
             }
 
             @Override
@@ -187,7 +196,12 @@ public class ItemViewModel extends ViewModel {
                     Log.e(TAG, "onComplete: getDisposableObserverVideos size " + size);
                 });
                 isRequestInProgress = false;
+                boundaryCallbackListener.onLoadingNewItemsCompleted();
             }
         };
+    }
+
+    public void setBoundaryCallbackListener(BoundaryCallbackListener boundaryCallbackListener) {
+        this.boundaryCallbackListener = boundaryCallbackListener;
     }
 }

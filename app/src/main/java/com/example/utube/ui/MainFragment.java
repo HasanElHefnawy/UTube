@@ -29,7 +29,6 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.AlertDialog;
-import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
 import android.text.Html;
@@ -44,6 +43,7 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 
 import com.example.utube.AppExecutor;
+import com.example.utube.CustomLinearLayoutManager;
 import com.example.utube.ItemClickSupport;
 import com.example.utube.R;
 import com.example.utube.database.AppDatabase;
@@ -81,7 +81,7 @@ import static android.app.Activity.RESULT_CANCELED;
 import static android.app.Activity.RESULT_OK;
 import static com.example.utube.database.AppDatabase.DATABASE_NAME;
 
-public class MainFragment extends Fragment {
+public class MainFragment extends Fragment implements ItemViewModel.BoundaryCallbackListener {
     private static final String TAG = "zzzzz MainFragment";
     private VideoAdapter adapter;
     private CompositeDisposable disposable = new CompositeDisposable();
@@ -99,6 +99,7 @@ public class MainFragment extends Fragment {
     private StorageReference videoStorageReference;
     private Uri databaseUri;
     VideoItemClickListener videoItemClickListener;
+    private CustomLinearLayoutManager customLinearLayoutManager;
 
     public interface VideoItemClickListener {
         void onVideoItemClicked(String videoId);
@@ -164,7 +165,8 @@ public class MainFragment extends Fragment {
 
         adapter = new VideoAdapter(getContext());
         binding.recyclerView.setAdapter(adapter);
-        binding.recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        customLinearLayoutManager = new CustomLinearLayoutManager(getContext());
+        binding.recyclerView.setLayoutManager(customLinearLayoutManager);
 
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getContext());
         final String query = sharedPreferences.getString("query", "");
@@ -326,6 +328,20 @@ public class MainFragment extends Fragment {
         return super.onOptionsItemSelected(item);
     }
 
+    @Override
+    public void onItemAtEndLoaded() {
+        Log.e(TAG, "onItemAtEndLoaded: ");
+        customLinearLayoutManager.setScrollEnabled(false);
+        binding.progressBar.setVisibility(View.VISIBLE);
+    }
+
+    @Override
+    public void onLoadingNewItemsCompleted() {
+        Log.e(TAG, "onLoadingNewItemsCompleted: ");
+        customLinearLayoutManager.setScrollEnabled(true);
+        binding.progressBar.setVisibility(View.GONE);
+    }
+
     private void prepareLoadingVideosFromDatabase() {
         Log.e(TAG, "prepareLoadingVideosFromDatabase: ");
         disposable.clear();
@@ -366,6 +382,7 @@ public class MainFragment extends Fragment {
     }
 
     private void getVideosFromDatabase(ItemViewModel itemViewModel) {
+        itemViewModel.setBoundaryCallbackListener(this);
         dataBaseExecutor.execute(() -> {
             List<Videos.Item> items = mDb.videoDao().getAllVideos();
             Log.e(TAG, "getVideosFromDatabase: items.size() " + items.size());
