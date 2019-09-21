@@ -129,7 +129,7 @@ public class MainFragment extends Fragment implements ItemViewModel.BoundaryCall
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_main, container, false);
         final View rootView = binding.getRoot();
         dataBaseExecutor = AppExecutor.getInstance().dataBaseExecutor();
-        mDb = AppDatabase.getInstance(getContext());
+        mDb = AppDatabase.getInstance(Objects.requireNonNull(getContext()));
 
         FirebaseApp firebaseApp = FirebaseApp.initializeApp(Objects.requireNonNull(getContext()));
         Log.e(TAG, "onCreateView: firebaseApp " + firebaseApp);
@@ -158,17 +158,17 @@ public class MainFragment extends Fragment implements ItemViewModel.BoundaryCall
             firebaseStorage = FirebaseStorage.getInstance();
             videoStorageReference = firebaseStorage.getReference().child(userName).child("videos.db");
         };
-        String databasePath = Objects.requireNonNull(getActivity()).getDatabasePath(DATABASE_NAME).getAbsolutePath();
+        String databasePath = Objects.requireNonNull(getContext()).getDatabasePath(DATABASE_NAME).getAbsolutePath();
         Log.e(TAG, "onCreateView: databasePath " + databasePath);
         databaseUri = Uri.fromFile(new File(databasePath));
         Log.e(TAG, "onCreateView: databaseUri " + databaseUri);
 
-        adapter = new VideoAdapter(getContext());
+        adapter = new VideoAdapter(Objects.requireNonNull(getContext()));
         binding.recyclerView.setAdapter(adapter);
-        customLinearLayoutManager = new CustomLinearLayoutManager(getContext());
+        customLinearLayoutManager = new CustomLinearLayoutManager(Objects.requireNonNull(getContext()));
         binding.recyclerView.setLayoutManager(customLinearLayoutManager);
 
-        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getContext());
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(Objects.requireNonNull(getContext()));
         final String query = sharedPreferences.getString("query", "");
         binding.searchEditText.setText(query);
         Log.e(TAG, "onCreateView: query " + query);
@@ -179,7 +179,7 @@ public class MainFragment extends Fragment implements ItemViewModel.BoundaryCall
             Log.e(TAG, "onCreateView: mDb.videoDao().getAllVideos().size() " + mDb.videoDao().getAllVideos().size());
             if (mDb.videoDao().getAllVideos().size() != 0) {
                 ItemViewModelFactory itemViewModelFactory = new ItemViewModelFactory(Objects.requireNonNull(getActivity()).getApplication(), query);
-                itemViewModel = ViewModelProviders.of(getActivity(), itemViewModelFactory).get(ItemViewModel.class);
+                itemViewModel = ViewModelProviders.of(Objects.requireNonNull(getActivity()), itemViewModelFactory).get(ItemViewModel.class);
                 Log.e(TAG, "onCreateView: itemViewModel " + itemViewModel);
                 getVideosFromDatabase(itemViewModel);
             }
@@ -199,8 +199,8 @@ public class MainFragment extends Fragment implements ItemViewModel.BoundaryCall
                 })
                 .setOnItemLongClickListener(
                         (recyclerView, position, v) -> {
-                            AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-                            View.inflate(getContext(), R.layout.dialog, null);
+                            AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(getContext()));
+                            View.inflate(Objects.requireNonNull(getContext()), R.layout.dialog, null);
                             CharSequence[] dialogButtons = new CharSequence[]{
                                     getString(R.string.update),
                                     getString(R.string.delete),
@@ -209,7 +209,7 @@ public class MainFragment extends Fragment implements ItemViewModel.BoundaryCall
                                     (dialog, which) -> {
                                         switch (which) {
                                             case 0:
-                                                Intent editorIntent = new Intent(getContext(), EditorActivity.class);
+                                                Intent editorIntent = new Intent(Objects.requireNonNull(getContext()), EditorActivity.class);
                                                 editorIntent.putExtra("idPrimaryKey", (int) v.getTag());
                                                 startActivity(editorIntent);
                                                 break;
@@ -284,9 +284,9 @@ public class MainFragment extends Fragment implements ItemViewModel.BoundaryCall
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == RC_SIGN_IN) {
             if (resultCode == RESULT_OK) {
-                Toast.makeText(getContext(), "Signed in!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(Objects.requireNonNull(getContext()), "Signed in!", Toast.LENGTH_SHORT).show();
             } else if (resultCode == RESULT_CANCELED) {
-                Toast.makeText(getContext(), "Sign in cancelled", Toast.LENGTH_SHORT).show();
+                Toast.makeText(Objects.requireNonNull(getContext()), "Sign in cancelled", Toast.LENGTH_SHORT).show();
                 Objects.requireNonNull(getActivity()).finish();
             }
         }
@@ -302,14 +302,14 @@ public class MainFragment extends Fragment implements ItemViewModel.BoundaryCall
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.settings:
-                Intent settingsIntent = new Intent(getContext(), SettingsActivity.class);
+                Intent settingsIntent = new Intent(Objects.requireNonNull(getContext()), SettingsActivity.class);
                 startActivity(settingsIntent);
                 break;
             case R.id.upload_database:
                 uploadDatabaseToFirebase();
                 break;
             case R.id.download_database:
-                Objects.requireNonNull(getActivity()).deleteDatabase(DATABASE_NAME);
+                Objects.requireNonNull(getContext()).deleteDatabase(DATABASE_NAME);
                 downloadDatabaseFromFirebase();
                 break;
             case R.id.clear_database:
@@ -447,7 +447,7 @@ public class MainFragment extends Fragment implements ItemViewModel.BoundaryCall
             if (task.isSuccessful()) {
                 Uri downloadUri = task.getResult();
                 Log.e(TAG, "uploadDatabaseToFirebase onComplete: downloadUri " + downloadUri);
-                Toast.makeText(getContext(), "Upload completed successfully", Toast.LENGTH_SHORT).show();
+                Toast.makeText(Objects.requireNonNull(getContext()), "Upload completed successfully", Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -459,7 +459,7 @@ public class MainFragment extends Fragment implements ItemViewModel.BoundaryCall
                 Log.e(TAG, "downloadDatabaseFromFirebase then: task.getException() " + task.getException());
                 throw task.getException();
             }
-            Intent intent = new Intent(getContext(), MainActivity.class);
+            Intent intent = new Intent(Objects.requireNonNull(getContext()), MainActivity.class);
             startActivity(intent);
             System.exit(0);
             return null;

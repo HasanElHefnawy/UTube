@@ -80,7 +80,7 @@ public class PlayerFragment extends Fragment implements Player.EventListener {
             @Override
             public void onExtractionGoesWrong(final ExtractorException e) {
                 Log.e(TAG, "videoId " + videoId);
-                Toast.makeText(getContext(), e.getMessage() + " videoId " + videoId, Toast.LENGTH_LONG).show();
+                Toast.makeText(Objects.requireNonNull(getContext()), e.getMessage() + " videoId " + videoId, Toast.LENGTH_LONG).show();
             }
         }).Extract(videoId);
         return rootView;
@@ -127,8 +127,8 @@ public class PlayerFragment extends Fragment implements Player.EventListener {
 
     private void initializePlayer(Uri mediaUri) {
         if (exoPlayer == null) {
-            exoPlayer = ExoPlayerFactory.newSimpleInstance(getContext());
-            DataSource.Factory dataSourceFactory = new DefaultHttpDataSourceFactory(Util.getUserAgent(getContext(), "Test1"));
+            exoPlayer = ExoPlayerFactory.newSimpleInstance(Objects.requireNonNull(getContext()));
+            DataSource.Factory dataSourceFactory = new DefaultHttpDataSourceFactory(Util.getUserAgent(Objects.requireNonNull(getContext()), "Test1"));
             // If the file type is .m3u, then it's HLS (HTTP Live Streaming)
             if (mediaUri.toString().contains("m3u")) {
                 HlsMediaSource hlsMediaSource = new HlsMediaSource.Factory(dataSourceFactory).createMediaSource(mediaUri);
