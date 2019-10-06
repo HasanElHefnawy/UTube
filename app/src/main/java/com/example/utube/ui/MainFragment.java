@@ -175,13 +175,13 @@ public class MainFragment extends Fragment implements ItemViewModel.BoundaryCall
 
         util.checkNetworkConnection(Objects.requireNonNull(getContext()));
         addWinkToEmptyListTextView();
+        ItemViewModelFactory itemViewModelFactory = new ItemViewModelFactory(Objects.requireNonNull(getActivity()).getApplication());
+        itemViewModel = ViewModelProviders.of(Objects.requireNonNull(getActivity()), itemViewModelFactory).get(ItemViewModel.class);
+        Log.e(TAG, "onCreateView: itemViewModel " + itemViewModel);
         dataBaseExecutor.execute(() -> {
             Log.e(TAG, "onCreateView: mDb.videoDao().getAllVideos().size() " + mDb.videoDao().getAllVideos().size());
             if (mDb.videoDao().getAllVideos().size() != 0) {
-                ItemViewModelFactory itemViewModelFactory = new ItemViewModelFactory(Objects.requireNonNull(getActivity()).getApplication());
-                itemViewModel = ViewModelProviders.of(Objects.requireNonNull(getActivity()), itemViewModelFactory).get(ItemViewModel.class);
                 itemViewModel.setQuery(query);
-                Log.e(TAG, "onCreateView: itemViewModel " + itemViewModel);
                 Objects.requireNonNull(getActivity()).runOnUiThread(() -> getVideosFromDatabase(itemViewModel));
             }
         });
@@ -361,9 +361,7 @@ public class MainFragment extends Fragment implements ItemViewModel.BoundaryCall
                     @Override
                     public void onNext(TextViewTextChangeEvent textViewTextChangeEvent) {
                         Log.e(TAG, "onNext: textViewTextChangeEvent " + textViewTextChangeEvent.text().toString());
-                        itemViewModel = new ItemViewModel(Objects.requireNonNull(getActivity()).getApplication());
                         itemViewModel.setQuery(textViewTextChangeEvent.text().toString());
-                        Log.e(TAG, "prepareLoadingVideosFromDatabase: itemViewModel " + itemViewModel);
                         Log.e(TAG, "prepareLoadingVideosFromDatabase Before adapter.submitList: adapter.getItemCount() " + adapter.getItemCount());
                         Log.e(TAG, "prepareLoadingVideosFromDatabase Before adapter.submitList: adapter.getCurrentList() " + adapter.getCurrentList());
                         Objects.requireNonNull(getActivity()).runOnUiThread(() -> getVideosFromDatabase(itemViewModel));
