@@ -178,10 +178,11 @@ public class MainFragment extends Fragment implements ItemViewModel.BoundaryCall
         dataBaseExecutor.execute(() -> {
             Log.e(TAG, "onCreateView: mDb.videoDao().getAllVideos().size() " + mDb.videoDao().getAllVideos().size());
             if (mDb.videoDao().getAllVideos().size() != 0) {
-                ItemViewModelFactory itemViewModelFactory = new ItemViewModelFactory(Objects.requireNonNull(getActivity()).getApplication(), query);
+                ItemViewModelFactory itemViewModelFactory = new ItemViewModelFactory(Objects.requireNonNull(getActivity()).getApplication());
                 itemViewModel = ViewModelProviders.of(Objects.requireNonNull(getActivity()), itemViewModelFactory).get(ItemViewModel.class);
+                itemViewModel.setQuery(query);
                 Log.e(TAG, "onCreateView: itemViewModel " + itemViewModel);
-                getVideosFromDatabase(itemViewModel);
+                Objects.requireNonNull(getActivity()).runOnUiThread(() -> getVideosFromDatabase(itemViewModel));
             }
         });
 
@@ -360,11 +361,12 @@ public class MainFragment extends Fragment implements ItemViewModel.BoundaryCall
                     @Override
                     public void onNext(TextViewTextChangeEvent textViewTextChangeEvent) {
                         Log.e(TAG, "onNext: textViewTextChangeEvent " + textViewTextChangeEvent.text().toString());
-                        itemViewModel = new ItemViewModel(Objects.requireNonNull(getActivity()).getApplication(), textViewTextChangeEvent.text().toString());
+                        itemViewModel = new ItemViewModel(Objects.requireNonNull(getActivity()).getApplication());
+                        itemViewModel.setQuery(textViewTextChangeEvent.text().toString());
                         Log.e(TAG, "prepareLoadingVideosFromDatabase: itemViewModel " + itemViewModel);
                         Log.e(TAG, "prepareLoadingVideosFromDatabase Before adapter.submitList: adapter.getItemCount() " + adapter.getItemCount());
                         Log.e(TAG, "prepareLoadingVideosFromDatabase Before adapter.submitList: adapter.getCurrentList() " + adapter.getCurrentList());
-                        getVideosFromDatabase(itemViewModel);
+                        Objects.requireNonNull(getActivity()).runOnUiThread(() -> getVideosFromDatabase(itemViewModel));
                         Log.e(TAG, "prepareLoadingVideosFromDatabase After adapter.submitList: adapter.getItemCount() " + adapter.getItemCount());
                         Log.e(TAG, "prepareLoadingVideosFromDatabase After adapter.submitList: adapter.getCurrentList() " + adapter.getCurrentList());
                     }
@@ -390,8 +392,8 @@ public class MainFragment extends Fragment implements ItemViewModel.BoundaryCall
                 Log.e(TAG, "getVideosFromDatabase: item.getIdPrimaryKey() " + item.getIdPrimaryKey() + " " + item.getSnippet().getTitle());
             }
         });
-        itemViewModel.getDatabasePagedList().observe(getViewLifecycleOwner(), items -> {
-            Log.e(TAG, "getVideosFromDatabase onChanged: getDatabasePagedList ");
+        itemViewModel.getVideosLiveDataPagedList().observe(getViewLifecycleOwner(), items -> {
+            Log.e(TAG, "getVideosFromDatabase onChanged: getVideosLiveDataPagedList ");
             if (items != null) {
                 Log.e(TAG, "Updating list of video items from LiveData in ViewModel");
                 Log.e(TAG, "getVideosFromDatabase onChanged: items.size() " + items.size());

@@ -2,6 +2,8 @@ package com.example.utube.viewmodel;
 
 import android.app.Application;
 import android.arch.lifecycle.LiveData;
+import android.arch.lifecycle.MutableLiveData;
+import android.arch.lifecycle.Transformations;
 import android.arch.lifecycle.ViewModel;
 import android.arch.paging.DataSource;
 import android.arch.paging.LivePagedListBuilder;
@@ -36,15 +38,16 @@ import retrofit2.Response;
 
 public class ItemViewModel extends ViewModel {
     private static final String TAG = "zzzz ItemViewModel";
-    private LiveData<PagedList<Videos.Item>> databasePagedList;
     private Application application;
-    private String query;
     private AppDatabase mDb;
     private SharedPreferences sharedPreferences;
     private CompositeDisposable disposable = new CompositeDisposable();
     private RetrofitApiService retrofitApiService = RetrofitApiClient.getClient().create(RetrofitApiService.class);
     private String nextPageToken;
     private boolean isRequestInProgress = false;
+    private MutableLiveData<String> queryLiveData = new MutableLiveData<>();
+    private LiveData<LiveData<PagedList<Videos.Item>>> videosResult = Transformations.map(queryLiveData, this::fetchVideosFromDatabase);
+    private LiveData<PagedList<Videos.Item>> videosLiveDataPagedList = Transformations.switchMap(videosResult, videosSearchResult -> videosSearchResult);
     private BoundaryCallbackListener boundaryCallbackListener;
 
     public interface BoundaryCallbackListener {
@@ -53,11 +56,17 @@ public class ItemViewModel extends ViewModel {
         void onLoadingNewItemsCompleted();
     }
 
-    public ItemViewModel(Application application, String query) {
+    public ItemViewModel(Application application) {
         Log.e(TAG, "ItemViewModel: ");
         this.application = application;
-        this.query = query;
         mDb = AppDatabase.getInstance(application);
+    }
+
+    public void setQuery(String queryString) {
+        queryLiveData.postValue(queryString);
+    }
+
+    private LiveData<PagedList<Videos.Item>> fetchVideosFromDatabase(String query) {
         // The database must have 25 entries at least before uploading to firebase storage!!!
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(application);
         String sizeString = sharedPreferences.getString(application.getString(R.string.setting_max_results_key), application.getString(R.string.setting_max_results_default_value));
@@ -78,31 +87,30 @@ public class ItemViewModel extends ViewModel {
                 Log.e(TAG, "onItemAtEndLoaded: ");
                 super.onItemAtEndLoaded(itemAtEnd);
                 boundaryCallbackListener.onItemAtEndLoaded();
-                fetchVideosFromInternetAndStoreInDatabase();
+                fetchVideosFromInternetAndStoreInDatabase(query);
             }
 
             @Override
             public void onZeroItemsLoaded() {
                 Log.e(TAG, "onZeroItemsLoaded: ");
                 super.onZeroItemsLoaded();
-                fetchVideosFromInternetAndStoreInDatabase();
+                fetchVideosFromInternetAndStoreInDatabase(query);
             }
         };
-
-        DataSource.Factory<Integer, Videos.Item> getAllVideos2 = mDb.videoDao().getQueryVideos("%" + query + "%");   // percent sign (%) wildcard to find any values using SQLite LIKE operator
-        databasePagedList = new LivePagedListBuilder<>(getAllVideos2, config)
+        DataSource.Factory<Integer, Videos.Item> queriedVideos = mDb.videoDao().getQueryVideos("%" + query + "%");   // percent sign (%) wildcard to find any values using SQLite LIKE operator
+        return new LivePagedListBuilder<>(queriedVideos, config)
                 .setFetchExecutor(executor)
                 .setBoundaryCallback(boundaryCallback)
                 .build();
     }
 
-    private void fetchVideosFromInternetAndStoreInDatabase() {
+    private void fetchVideosFromInternetAndStoreInDatabase(String query) {
         Log.e(TAG, "fetchVideosFromInternetAndStoreInDatabase: isRequestInProgress " + isRequestInProgress);
         if (isRequestInProgress) return;
         isRequestInProgress = true;
         disposable.clear();
         disposable.add(Observable.just(query)
-                .switchMap((Function<String, Observable<Videos.Item>>) query -> getObservableAllVideos(nextPageToken)
+                .switchMap((Function<String, Observable<Videos.Item>>) query1 -> getObservableAllVideos(nextPageToken, query)
                         .map(videos -> {
                             nextPageToken = videos.getNextPageToken();
                             SharedPreferences.Editor editor = sharedPreferences.edit();
@@ -117,13 +125,13 @@ public class ItemViewModel extends ViewModel {
         );
     }
 
-    public LiveData<PagedList<Videos.Item>> getDatabasePagedList() {
-        Log.e(TAG, "getDatabasePagedList: databasePagedList " + databasePagedList);
-        Log.e(TAG, "getDatabasePagedList: databasePagedList.getValue() " + databasePagedList.getValue());
-        return databasePagedList;
+    public LiveData<PagedList<Videos.Item>> getVideosLiveDataPagedList() {
+        Log.e(TAG, "getVideos: videosLiveDataPagedList " + videosLiveDataPagedList);
+        Log.e(TAG, "getVideos: videosLiveDataPagedList.getValue() " + videosLiveDataPagedList.getValue());
+        return videosLiveDataPagedList;
     }
 
-    private Observable<Videos> getObservableAllVideos(String page) {
+    private Observable<Videos> getObservableAllVideos(String page, String query) {
         return retrofitApiService.getAllVideos(
                 "search",
                 query,

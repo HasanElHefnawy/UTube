@@ -7,16 +7,14 @@ import android.arch.lifecycle.ViewModelProvider;
 public class ItemViewModelFactory extends ViewModelProvider.NewInstanceFactory {
 
     private final Application application;
-    private String query;
 
-    public ItemViewModelFactory(Application application, String query) {
+    public ItemViewModelFactory(Application application) {
         this.application = application;
-        this.query = query;
     }
 
     @Override
     public <T extends ViewModel> T create(Class<T> modelClass) {
         //noinspection unchecked
-        return (T) new ItemViewModel(application, query);
+        return (T) new ItemViewModel(application);
     }
 }
