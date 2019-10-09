@@ -44,12 +44,15 @@ import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Toast;
 
-import com.example.utube.AppExecutor;
 import com.example.utube.CustomLinearLayoutManager;
 import com.example.utube.ItemClickSupport;
 import com.example.utube.R;
+import com.example.utube.UTubeApplication;
 import com.example.utube.database.AppDatabase;
 import com.example.utube.databinding.FragmentMainBinding;
+import com.example.utube.di.DaggerMainFragmentComponent;
+import com.example.utube.di.MainFragmentComponent;
+import com.example.utube.di.MainFragmentModule;
 import com.example.utube.model.Videos;
 import com.example.utube.util;
 import com.example.utube.viewmodel.ItemViewModel;
@@ -73,6 +76,8 @@ import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
+import javax.inject.Inject;
+
 import io.reactivex.Observable;
 import io.reactivex.ObservableSource;
 import io.reactivex.disposables.CompositeDisposable;
@@ -81,16 +86,17 @@ import io.reactivex.observers.DisposableObserver;
 
 import static android.app.Activity.RESULT_CANCELED;
 import static android.app.Activity.RESULT_OK;
-import static com.example.utube.database.AppDatabase.DATABASE_NAME;
+import static com.example.utube.di.DatabaseModule.DATABASE_NAME;
 
 public class MainFragment extends Fragment implements ItemViewModel.BoundaryCallbackListener {
     private static final String TAG = "zzzzz MainFragment";
-    private VideoAdapter adapter;
+    @Inject VideoAdapter adapter;
     private CompositeDisposable disposable = new CompositeDisposable();
     private FragmentMainBinding binding;
-    private Executor dataBaseExecutor;
-    private AppDatabase mDb;
+    @Inject Executor dataBaseExecutor;
+    @Inject AppDatabase mDb;
     private SharedPreferences sharedPreferences;
+    @Inject ItemViewModelFactory itemViewModelFactory;
     private ItemViewModel itemViewModel;
     private FirebaseAuth firebaseAuth;
     private FirebaseAuth.AuthStateListener firebaseAuthStateListener;
@@ -130,8 +136,6 @@ public class MainFragment extends Fragment implements ItemViewModel.BoundaryCall
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_main, container, false);
         final View rootView = binding.getRoot();
-        dataBaseExecutor = AppExecutor.getInstance().dataBaseExecutor();
-        mDb = AppDatabase.getInstance(Objects.requireNonNull(getContext()));
 
         FirebaseApp firebaseApp = FirebaseApp.initializeApp(Objects.requireNonNull(getContext()));
         Log.e(TAG, "onCreateView: firebaseApp " + firebaseApp);
@@ -165,7 +169,12 @@ public class MainFragment extends Fragment implements ItemViewModel.BoundaryCall
         databaseUri = Uri.fromFile(new File(databasePath));
         Log.e(TAG, "onCreateView: databaseUri " + databaseUri);
 
-        adapter = new VideoAdapter(Objects.requireNonNull(getContext()));
+        MainFragmentComponent mainFragmentComponent = DaggerMainFragmentComponent
+                .builder()
+                .mainFragmentModule(new MainFragmentModule(Objects.requireNonNull(getContext())))
+                .applicationComponent(((UTubeApplication) Objects.requireNonNull(getActivity()).getApplicationContext()).getApplicationComponent())
+                .build();
+        mainFragmentComponent.inject(this);
         binding.recyclerView.setAdapter(adapter);
         customLinearLayoutManager = new CustomLinearLayoutManager(Objects.requireNonNull(getContext()));
         binding.recyclerView.setLayoutManager(customLinearLayoutManager);
@@ -177,7 +186,6 @@ public class MainFragment extends Fragment implements ItemViewModel.BoundaryCall
 
         util.checkNetworkConnection(Objects.requireNonNull(getContext()));
         addWinkToEmptyListTextView();
-        ItemViewModelFactory itemViewModelFactory = new ItemViewModelFactory(Objects.requireNonNull(getActivity()).getApplication());
         itemViewModel = ViewModelProviders.of(Objects.requireNonNull(getActivity()), itemViewModelFactory).get(ItemViewModel.class);
         Log.e(TAG, "onCreateView: itemViewModel " + itemViewModel);
         dataBaseExecutor.execute(() -> {

@@ -26,7 +26,6 @@ import android.widget.DatePicker;
 import android.widget.NumberPicker;
 import android.widget.TextView;
 
-import com.example.utube.AppExecutor;
 import com.example.utube.R;
 import com.example.utube.database.AppDatabase;
 import com.example.utube.databinding.ActivityEditorBinding;
@@ -40,11 +39,15 @@ import org.joda.time.Period;
 
 import java.util.concurrent.Executor;
 
+import javax.inject.Inject;
+
+import dagger.android.AndroidInjection;
+
 public class EditorActivity extends AppCompatActivity {
     private static final String TAG = "zzzzz EditorActivity";
     private ActivityEditorBinding binding;
-    private Executor dataBaseExecutor;
-    private AppDatabase mDb;
+    @Inject Executor dataBaseExecutor;
+    @Inject AppDatabase mDb;
     private Videos.Item videoItem;
     private String title;
     private String publishedAt;
@@ -57,8 +60,7 @@ public class EditorActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         binding = DataBindingUtil.setContentView(this, R.layout.activity_editor);
-        dataBaseExecutor = AppExecutor.getInstance().dataBaseExecutor();
-        mDb = AppDatabase.getInstance(this);
+        AndroidInjection.inject(this);
         Intent intent = getIntent();
         int idPrimaryKey = intent.getIntExtra("idPrimaryKey", -1);
         EditorViewModelDatabaseFactory editorViewModelDatabaseFactory = new EditorViewModelDatabaseFactory(mDb, idPrimaryKey);

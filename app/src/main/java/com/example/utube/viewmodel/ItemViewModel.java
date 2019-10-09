@@ -14,11 +14,11 @@ import android.support.annotation.NonNull;
 import android.util.Log;
 import android.widget.Toast;
 
-import com.example.utube.AppExecutor;
 import com.example.utube.R;
+import com.example.utube.UTubeApplication;
 import com.example.utube.database.AppDatabase;
+import com.example.utube.di.ApplicationComponent;
 import com.example.utube.model.Videos;
-import com.example.utube.network.RetrofitApiClient;
 import com.example.utube.network.RetrofitApiService;
 import com.jakewharton.retrofit2.adapter.rxjava2.HttpException;
 
@@ -27,6 +27,8 @@ import org.json.JSONObject;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+
+import javax.inject.Inject;
 
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -39,10 +41,11 @@ import retrofit2.Response;
 public class ItemViewModel extends ViewModel {
     private static final String TAG = "zzzz ItemViewModel";
     private Application application;
-    private AppDatabase mDb;
+    @Inject Executor dataBaseExecutor;
+    @Inject AppDatabase mDb;
     private SharedPreferences sharedPreferences;
     private CompositeDisposable disposable = new CompositeDisposable();
-    private RetrofitApiService retrofitApiService = RetrofitApiClient.getClient().create(RetrofitApiService.class);
+    @Inject RetrofitApiService retrofitApiService;
     private String nextPageToken;
     private boolean isRequestInProgress = false;
     private MutableLiveData<String> queryLiveData = new MutableLiveData<>();
@@ -56,10 +59,11 @@ public class ItemViewModel extends ViewModel {
         void onLoadingNewItemsCompleted();
     }
 
-    public ItemViewModel(Application application) {
+    ItemViewModel(Application application) {
         Log.e(TAG, "ItemViewModel: ");
         this.application = application;
-        mDb = AppDatabase.getInstance(application);
+        ApplicationComponent applicationComponent = ((UTubeApplication) application.getApplicationContext()).getApplicationComponent();
+        applicationComponent.inject(this);
     }
 
     public void setQuery(String queryString) {
@@ -163,7 +167,6 @@ public class ItemViewModel extends ViewModel {
 
     private DisposableObserver<Videos.Item> getDisposableObserverVideos() {
         Log.e(TAG, "getDisposableObserverVideos: ");
-        final Executor dataBaseExecutor = AppExecutor.getInstance().dataBaseExecutor();
         return new DisposableObserver<Videos.Item>() {
             @Override
             public void onNext(final Videos.Item item) {
