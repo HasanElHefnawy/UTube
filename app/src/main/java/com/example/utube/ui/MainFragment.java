@@ -16,6 +16,7 @@
 
 package com.example.utube.ui;
 
+import android.app.Activity;
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
 import android.content.Intent;
@@ -40,6 +41,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Toast;
 
 import com.example.utube.AppExecutor;
@@ -355,6 +357,8 @@ public class MainFragment extends Fragment implements ItemViewModel.BoundaryCall
                     editor.putString("query", textViewTextChangeEvent.text().toString());
                     editor.putString("nextPageToken", "");
                     editor.apply();
+                    InputMethodManager imm = (InputMethodManager) Objects.requireNonNull(getActivity()).getSystemService(Activity.INPUT_METHOD_SERVICE);
+                    imm.hideSoftInputFromWindow(binding.searchEditText.getWindowToken(), 0);
                     return Observable.just(textViewTextChangeEvent);
                 })
                 .subscribeWith(new DisposableObserver<TextViewTextChangeEvent>() {
