@@ -3,7 +3,6 @@ package com.example.utube.extractor;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
-import android.util.Log;
 
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParser;
@@ -17,7 +16,6 @@ import java.util.List;
 import java.util.Map;
 
 public class YoutubeStreamExtractor extends AsyncTask<String, Void, Void> {
-    private static final String TAG = "zzzzz " + YoutubeStreamExtractor.class.getSimpleName();
     private Map<String, String> Headers = new HashMap<>();
     private List<YoutubeMedia> adaptiveMedia = new ArrayList<>();
     private List<YoutubeMedia> muxedMedia = new ArrayList<>();
@@ -73,7 +71,6 @@ public class YoutubeStreamExtractor extends AsyncTask<String, Void, Void> {
             parseJson(jsonBody);
             parseUrls();
         } catch (Exception e) {
-            Log.e(TAG, e.toString());
             Ex = new ExtractorException("Error While getting Youtube Data:" + e.getMessage());
             this.cancel(true);
         }
@@ -159,7 +156,6 @@ public class YoutubeStreamExtractor extends AsyncTask<String, Void, Void> {
         response = new GsonBuilder().serializeNulls().create().fromJson(parser.parse(body), Response.class);
         PlayerResponse playerResponse = new GsonBuilder().serializeNulls().create().fromJson(response.getArgs().getPlayerResponse(), PlayerResponse.class);
         YTVideoMeta = playerResponse.getVideoDetails();
-//        Log.e(TAG, response.getAssets().getJs());
         if (YTVideoMeta.getisLive() || YTVideoMeta.getIsLiveContent()) {
             isLive = true;
         }
@@ -171,7 +167,6 @@ public class YoutubeStreamExtractor extends AsyncTask<String, Void, Void> {
         if (data.getHlsManifestUrl() == null) {
             throw new ExtractorException("No link for hls video");
         }
-        Log.e(TAG, data.getHlsManifestUrl());
         String hlsPageSource = HTTPUtility.downloadPageSource(data.getHlsManifestUrl());
         String regexhlsLinks = "(https://manifest.googlevideo.com/).*?((?=\\#)|\\z| )";
         List<String> Livelinks = RegexUtils.getAllMatches(regexhlsLinks, hlsPageSource);

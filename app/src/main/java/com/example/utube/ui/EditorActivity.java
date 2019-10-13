@@ -15,7 +15,6 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -44,7 +43,6 @@ import javax.inject.Inject;
 import dagger.android.AndroidInjection;
 
 public class EditorActivity extends AppCompatActivity {
-    private static final String TAG = "zzzzz EditorActivity";
     private ActivityEditorBinding binding;
     @Inject Executor dataBaseExecutor;
     @Inject AppDatabase mDb;
@@ -67,7 +65,6 @@ public class EditorActivity extends AppCompatActivity {
         editorViewModelDatabase = ViewModelProviders.of(this, editorViewModelDatabaseFactory).get(EditorViewModelDatabase.class);
         editorViewModelDatabase.getVideoItemLiveData().observe(this, videoItem -> {
             if (videoItem != null) {
-                Log.e(TAG, "Updating current video item from LiveData in ViewModel");
                 title = videoItem.getSnippet().getTitle();
                 publishedAt = videoItem.getSnippet().getPublishedAt();
                 duration = videoItem.getDuration();

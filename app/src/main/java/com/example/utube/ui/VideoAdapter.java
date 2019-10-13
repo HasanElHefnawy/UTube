@@ -6,7 +6,6 @@ import android.databinding.DataBindingUtil;
 import android.support.annotation.NonNull;
 import android.support.v7.util.DiffUtil;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
@@ -19,7 +18,6 @@ import com.example.utube.util;
 
 @SingletonActivityScope
 public class VideoAdapter extends PagedListAdapter<Videos.Item, VideoAdapter.ViewHolder> {
-    private static final String TAG = "zzzzz VideoAdapter";
     private Context context;
 
     public VideoAdapter(Context context) {
@@ -46,8 +44,6 @@ public class VideoAdapter extends PagedListAdapter<Videos.Item, VideoAdapter.Vie
             viewHolder.binding.publishedAt.setText(util.parseDateTime(videoItem.getSnippet().getPublishedAt()));
             viewHolder.binding.duration.setText(util.parseDuration(context, videoItem.getDuration()));
             viewHolder.itemView.setTag(videoItem.getIdPrimaryKey());
-        } else {
-            Log.e(TAG, String.format("Item at position %d is null", position));
         }
     }
 
@@ -55,15 +51,11 @@ public class VideoAdapter extends PagedListAdapter<Videos.Item, VideoAdapter.Vie
             new DiffUtil.ItemCallback<Videos.Item>() {
                 @Override
                 public boolean areItemsTheSame(Videos.Item oldItem, Videos.Item newItem) {
-                    Log.d(TAG, "areItemsTheSame: oldItem.getIdPrimaryKey() " + oldItem.getIdPrimaryKey() + " " + oldItem.getSnippet().getTitle());
-                    Log.d(TAG, "areItemsTheSame: newItem.getIdPrimaryKey() " + newItem.getIdPrimaryKey() + " " + newItem.getSnippet().getTitle());
                     return oldItem.getIdPrimaryKey() == newItem.getIdPrimaryKey();
                 }
 
                 @Override
                 public boolean areContentsTheSame(Videos.Item oldItem, Videos.Item newItem) {
-                    Log.d(TAG, "areContentsTheSame: oldItem.getIdPrimaryKey() " + oldItem.getIdPrimaryKey() + " " + oldItem.getSnippet().getTitle());
-                    Log.d(TAG, "areContentsTheSame: newItem.getIdPrimaryKey() " + newItem.getIdPrimaryKey() + " " + newItem.getSnippet().getTitle());
                     return oldItem.equals(newItem);
                 }
             };

@@ -11,7 +11,6 @@ import android.arch.paging.PagedList;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
-import android.util.Log;
 import android.widget.Toast;
 
 import com.example.utube.R;
@@ -39,7 +38,6 @@ import io.reactivex.schedulers.Schedulers;
 import retrofit2.Response;
 
 public class ItemViewModel extends ViewModel {
-    private static final String TAG = "zzzz ItemViewModel";
     private Application application;
     @Inject Executor dataBaseExecutor;
     @Inject AppDatabase mDb;
@@ -60,7 +58,6 @@ public class ItemViewModel extends ViewModel {
     }
 
     ItemViewModel(Application application) {
-        Log.e(TAG, "ItemViewModel: ");
         this.application = application;
         ApplicationComponent applicationComponent = ((UTubeApplication) application.getApplicationContext()).getApplicationComponent();
         applicationComponent.inject(this);
@@ -78,7 +75,6 @@ public class ItemViewModel extends ViewModel {
         if (sizeString != null)
             size = Integer.valueOf(sizeString);
         nextPageToken = sharedPreferences.getString("nextPageToken", "");
-        Log.e(TAG, "ItemViewModel: nextPageToken " + nextPageToken);
         PagedList.Config config = new PagedList.Config.Builder()
                 .setEnablePlaceholders(true)
                 .setInitialLoadSizeHint(size)
@@ -88,7 +84,6 @@ public class ItemViewModel extends ViewModel {
         PagedList.BoundaryCallback<Videos.Item> boundaryCallback = new PagedList.BoundaryCallback<Videos.Item>() {
             @Override
             public void onItemAtEndLoaded(@NonNull Videos.Item itemAtEnd) {
-                Log.e(TAG, "onItemAtEndLoaded: ");
                 super.onItemAtEndLoaded(itemAtEnd);
                 boundaryCallbackListener.onItemAtEndLoaded();
                 fetchVideosFromInternetAndStoreInDatabase(query);
@@ -96,7 +91,6 @@ public class ItemViewModel extends ViewModel {
 
             @Override
             public void onZeroItemsLoaded() {
-                Log.e(TAG, "onZeroItemsLoaded: ");
                 super.onZeroItemsLoaded();
                 fetchVideosFromInternetAndStoreInDatabase(query);
             }
@@ -109,7 +103,6 @@ public class ItemViewModel extends ViewModel {
     }
 
     private void fetchVideosFromInternetAndStoreInDatabase(String query) {
-        Log.e(TAG, "fetchVideosFromInternetAndStoreInDatabase: isRequestInProgress " + isRequestInProgress);
         if (isRequestInProgress) return;
         isRequestInProgress = true;
         disposable.clear();
@@ -120,7 +113,6 @@ public class ItemViewModel extends ViewModel {
                             SharedPreferences.Editor editor = sharedPreferences.edit();
                             editor.putString("nextPageToken", nextPageToken);
                             editor.apply();
-                            Log.e(TAG, "fetchVideosFromInternetAndStoreInDatabase map: nextPageToken " + nextPageToken);
                             return videos.getItems();
                         })
                         .flatMap((Function<List<Videos.Item>, Observable<Videos.Item>>) Observable::fromIterable)
@@ -130,8 +122,6 @@ public class ItemViewModel extends ViewModel {
     }
 
     public LiveData<PagedList<Videos.Item>> getVideosLiveDataPagedList() {
-        Log.e(TAG, "getVideos: videosLiveDataPagedList " + videosLiveDataPagedList);
-        Log.e(TAG, "getVideos: videosLiveDataPagedList.getValue() " + videosLiveDataPagedList.getValue());
         return videosLiveDataPagedList;
     }
 
@@ -150,7 +140,6 @@ public class ItemViewModel extends ViewModel {
     }
 
     private Observable<Videos.Item> getObservableVideoDuration(final Videos.Item item) {
-        Log.e(TAG, "getObservableVideoDuration: " + item.getId().getVideoId() + "\t" + item.getDuration());
         return retrofitApiService.getVideoDuration(
                 "videos",
                 item.getId().getVideoId(),
@@ -166,27 +155,16 @@ public class ItemViewModel extends ViewModel {
     }
 
     private DisposableObserver<Videos.Item> getDisposableObserverVideos() {
-        Log.e(TAG, "getDisposableObserverVideos: ");
         return new DisposableObserver<Videos.Item>() {
             @Override
             public void onNext(final Videos.Item item) {
-                dataBaseExecutor.execute(() -> {
-                    int sizeBefore = mDb.videoDao().getAllVideos().size();
-                    Log.e(TAG, "onNext: getDisposableObserverVideos sizeBefore " + sizeBefore);
-                    mDb.videoDao().insertVideo(item);
-                    Log.e(TAG, "onNext: getDisposableObserverVideos item " + item);
-                    Log.e(TAG, "onNext: getDisposableObserverVideos " + item.getIdPrimaryKey() + "\t" + item.getSnippet().getTitle() + "\t" + item.getDuration());
-                    int sizeAfter = mDb.videoDao().getAllVideos().size();
-                    Log.e(TAG, "onNext: getDisposableObserverVideos sizeAfter " + sizeAfter);
-                });
+                dataBaseExecutor.execute(() -> mDb.videoDao().insertVideo(item));
             }
 
             @Override
             public void onError(Throwable throwable) {
-                Log.e(TAG, "onError: getDisposableObserverVideos " + throwable);
                 if (throwable instanceof HttpException) {
                     Response response = ((HttpException) throwable).response();
-                    Log.e(TAG, "onError: response " + response);
                     if (response != null && response.errorBody() != null) {
                         try {
                             JSONObject jObjError = new JSONObject(response.errorBody().string());
@@ -201,11 +179,6 @@ public class ItemViewModel extends ViewModel {
 
             @Override
             public void onComplete() {
-                Log.e(TAG, "onComplete: getDisposableObserverVideos");
-                dataBaseExecutor.execute(() -> {
-                    int size = mDb.videoDao().getAllVideos().size();
-                    Log.e(TAG, "onComplete: getDisposableObserverVideos size " + size);
-                });
                 isRequestInProgress = false;
                 boundaryCallbackListener.onLoadingNewItemsCompleted();
             }

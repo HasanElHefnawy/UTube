@@ -3,7 +3,6 @@ package com.example.utube;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.util.Log;
 import android.widget.Toast;
 
 import org.joda.time.DateTime;
@@ -39,7 +38,6 @@ public class util {
         ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
         boolean isConnected = networkInfo != null && networkInfo.isConnected();
-        Log.e("zzzzz " + context.getClass().getSimpleName(), "isConnected: " + isConnected);
         if (!isConnected) {
             Toast.makeText(context, "There is no network connection", Toast.LENGTH_SHORT).show();
         }
